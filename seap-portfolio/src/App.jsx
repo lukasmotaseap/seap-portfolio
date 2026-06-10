@@ -1,541 +1,461 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { fuzzySearch } from './utils';
-import AdminModal from './AdminModal';
+import React, { useState, useEffect } from 'react';
 
-const API_URL = 'https://mistyrose-turkey-143466.hostingsite.com';
-
-const initialSections = {
-  hero: { title: "Excelência e Reintegração", subtitle: "Sistema de gestão de ativos prisionais e produção industrial do Estado do Maranhão." },
-  about: { text: "A SEAP Maranhão atua com foco na reintegração social através do trabalho digno, producing ativos de alta qualidade para a sociedade.", img: "https://placehold.co/600x800/192d55/ffffff?text=Institucional" },
-  dignity: { text: "O trabalho nas unidades prisionais não apenas capacita, mas devolve a dignidade humana, gerando valor real para o Estado.", img: "https://placehold.co/600x800/c78c2b/ffffff?text=Trabalho+com+Dignidade" },
-  cleaning: { img: "https://placehold.co/1200x400/eeeeee/999?text=Servicos+de+Limpeza" }
-};
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export default function App() {
+  // Estados de Dados e Conexão
+  const [produtos, setProdutos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState(null);
+
+  // Estados de Filtros e Busca
+  const [busca, setBusca] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('all'); // 'all', 'product', 'bakery'
+  const [categoriaAtiva, setCategoriaAtiva] = useState('all');
+
+  // Estados de Autenticação e Modais
   const [isAdmin, setIsAdmin] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showLogin, setShowLogin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showCrudModal, setShowCrudModal] = useState(false);
   
-  const [sections, setSections] = useState(initialSections);
-  const [catalog, setCatalog] = useState([]);
+  // Formulários
+  const [loginForm, setLoginForm] = useState({ username: '', password: '' });
+  const [editingItem, setEditingItem] = useState(null);
+  const [formData, setFormData] = useState({
+    type: 'product',
+    title: '',
+    description: '',
+    price: '',
+    category: '',
+    subcategory: '',
+    dimensions: '',
+    colors: '',
+    foods: '',
+    drinks: ''
+  });
+  const [imageFile, setImageFile] = useState(null);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [itemToEdit, setItemToEdit] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState('Todos');
-
-  const topRef = useRef(null);
-  const productsRef = useRef(null);
-
-  // Efeito de Modo Escuro
+  // Verifica se o servidor já estava logado ao abrir o app
   useEffect(() => {
-    if (darkMode) document.documentElement.classList.add('dark');
-    else document.documentElement.classList.remove('dark');
-  }, [darkMode]);
-
-  // MODIFICAÇÃO: Verifica se já existe uma sessão de servidor ativa ao carregar o site
-  useEffect(() => {
-    const savedToken = localStorage.getItem('seap_token');
-    if (savedToken) {
-      setIsAdmin(true);
-    }
-    loadData();
+    const token = localStorage.getItem('seap_token');
+    if (token) setIsAdmin(true);
+    carregarCatalogos();
   }, []);
 
-  // Carregamento de Dados Públicos do Catálogo
-  const loadData = async () => {
-    setIsLoading(false);
+  // API: Buscar Itens do Banco de Dados
+  const carregarCatalogos = async () => {
     try {
-      const res = await fetch(`${API_URL}/api/produtos`);
-      if (!res.ok) throw new Error('Falha de comunicação');
-      const data = await res.json();
-      setCatalog(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.error("Erro ao carregar dados do SEAP:", error);
-      setCatalog([]);
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/produtos`);
+      if (!response.ok) throw new Error('Falha ao ler dados institucionais.');
+      const dados = await response.json();
+      setProdutos(dados);
+      setErro(null);
+    } catch (err) {
+      setErro(err.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  // Mapeia dinamicamente as categorias existentes
-  const availableCategories = useMemo(() => {
-    const cats = catalog
-      .filter(item => item.type === 'product' && item.category)
-      .map(item => item.category);
-    return ['Todos', ...new Set(cats)];
-  }, [catalog]);
-
-  // Filtro Avançado Combinado
-  const filteredCatalog = useMemo(() => {
-    return catalog.filter(item => {
-      const matchesSearch = fuzzySearch(searchQuery, item.title) || fuzzySearch(searchQuery, item.description);
-      const matchesCategory = item.type !== 'product' || selectedCategory === 'Todos' || item.category === selectedCategory;
-      
-      return matchesSearch && matchesCategory;
-    });
-  }, [catalog, searchQuery, selectedCategory]);
-
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-    if (e.target.value && productsRef.current) {
-      productsRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  // MODIFICAÇÃO: Implementação Real da Autenticação do Servidor via API
+  // API: Autenticação do Administrador
   const handleLogin = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    const username = e.target.username.value;
-    const password = e.target.password.value;
-
     try {
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ username, password })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginForm)
       });
+      const resData = await response.json();
 
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        // Armazena o token seguro no navegador do servidor
-        localStorage.setItem('seap_token', result.token);
-        setIsAdmin(true); 
-        setShowLogin(false);
+      if (resData.success) {
+        localStorage.setItem('seap_token', resData.token);
+        setIsAdmin(true);
+        setShowLoginModal(false);
+        setLoginForm({ username: '', password: '' });
       } else {
-        alert(result.message || "Credenciais institucionais incorretas. Tente novamente.");
+        alert(resData.message || 'Credenciais inválidas.');
       }
-    } catch (error) {
-      console.error("Erro na autenticação:", error);
-      alert("Falha ao conectar com o serviço de autenticação SEAP.");
-    } finally {
-      setIsLoading(false);
+    } catch {
+      alert('Erro ao conectar com o servidor de autenticação.');
     }
   };
 
-  // MODIFICAÇÃO: Encerramento de sessão seguro limpando o armazenamento
   const handleLogout = () => {
     localStorage.removeItem('seap_token');
     setIsAdmin(false);
+    setShowCrudModal(false);
   };
 
-  // MODIFICAÇÃO: Exclusão no Backend passando o Token de Autenticação
-  const handleDeleteItem = async (id) => {
-    if (!window.confirm("Atenção Servidor: Confirmar exclusão definitiva do ativo?")) return;
-    
+  // API: Salvar ou Atualizar Ativo
+  const handleSaveItem = async (e) => {
+    e.preventDefault();
     const token = localStorage.getItem('seap_token');
     
-    try {
-      const response = await fetch(`${API_URL}/api/produtos/${id}`, { 
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const dataToSend = new FormData();
+    dataToSend.append('type', formData.type);
+    dataToSend.append('title', formData.title);
+    dataToSend.append('description', formData.description);
+    dataToSend.append('price', formData.price);
+    dataToSend.append('category', formData.category);
+    dataToSend.append('subcategory', formData.subcategory);
 
-      if (response.ok) {
-        setCatalog(prev => prev.filter(p => p.id !== id));
-      } else {
-        const errorData = await response.json();
-        alert(errorData.message || "Acesso negado ou token expirado. Faça login novamente.");
-      }
-    } catch (err) {
-      alert("Erro ao excluir item. Verifique a conexão com o servidor.");
+    // Estrutura o objeto de especificações flexíveis em JSON
+    const specifications = {
+      dimensions: formData.dimensions,
+      colors: formData.colors ? formData.colors.split(',').map(c => c.trim()) : [],
+      foods: formData.foods ? formData.foods.split(',').map(f => f.trim()) : [],
+      drinks: formData.drinks ? formData.drinks.split(',').map(d => d.trim()) : []
+    };
+    dataToSend.append('specifications', JSON.stringify(specifications));
+
+    if (imageFile) {
+      dataToSend.append('image', imageFile);
+    } else if (editingItem) {
+      dataToSend.append('image_url', editingItem.image);
     }
-  };
 
-  // MODIFICAÇÃO: Salvamento no Backend passando o Token de Autenticação
-  const handleSaveItem = async (formDataPayload, imageFile) => {
-    setIsLoading(true);
-    const token = localStorage.getItem('seap_token');
+    const endpoint = editingItem ? '/api/produtos/update' : '/api/produtos/create';
+    if (editingItem) dataToSend.append('id', editingItem.id);
 
     try {
-      const formData = new FormData();
-      
-      formData.append('id', formDataPayload.id || '');
-      formData.append('type', formDataPayload.type);
-      formData.append('title', formDataPayload.title);
-      formData.append('description', formDataPayload.description || '');
-      formData.append('price', formDataPayload.price);
-      formData.append('category', formDataPayload.category || '');
-      formData.append('subcategory', formDataPayload.subcategory || '');
-
-      const specifications = {
-        dimensions: formDataPayload.dimensions || '',
-        colors: formDataPayload.colors || [],
-        foods: formDataPayload.foods || [],
-        drinks: formDataPayload.drinks || []
-      };
-      formData.append('specifications', JSON.stringify(specifications));
-
-      if (imageFile) {
-        formData.append('image', imageFile);
-      } else if (formDataPayload.image) {
-        formData.append('image_url', formDataPayload.image);
-      }
-
-      const isEditing = !!formDataPayload.id;
-      const url = isEditing 
-        ? `${API_URL}/api/produtos/update` 
-        : `${API_URL}/api/produtos/create`;
-
-      const response = await fetch(url, {
+      const response = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}` // Garante que apenas o servidor logado altere dados
-        },
-        body: formData,
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: dataToSend
       });
-
       const result = await response.json();
-      
-      if (response.ok && result.success) {
-        if (isEditing) {
-          setCatalog(prev => prev.map(item => item.id === result.data.id ? result.data : item));
-        } else {
-          setCatalog(prev => [result.data, ...prev]);
-        }
-        setIsModalOpen(false);
-        setItemToEdit(null);
+
+      if (result.success) {
+        alert(editingItem ? 'Item atualizado com sucesso!' : 'Item cadastrado com sucesso!');
+        fecharCrudModal();
+        carregarCatalogos();
       } else {
-        alert(result.message || "Sessão expirada. Por favor, refaça o login de servidor.");
+        alert(result.message);
       }
-    } catch (error) {
-      console.error('Erro ao salvar:', error);
-      alert('Erro crítico ao salvar as alterações no banco de dados.');
-    } finally {
-      setIsLoading(false);
+    } catch {
+      alert('Falha na comunicação operacional com o servidor.');
     }
   };
+
+  // API: Remover Ativo
+  const handleDeleteItem = async (id) => {
+    if (!window.confirm('Confirma a remoção definitiva deste ativo do acervo institucional?')) return;
+    const token = localStorage.getItem('seap_token');
+
+    try {
+      const response = await fetch(`${API_URL}/api/produtos/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        carregarCatalogos();
+      } else {
+        alert(result.message);
+      }
+    } catch {
+      alert('Erro ao processar a exclusão.');
+    }
+  };
+
+  // Helpers de Controle de Estado do Formulário
+  const abrirCriarModal = () => {
+    setEditingItem(null);
+    setFormData({
+      type: 'product', title: '', description: '', price: '',
+      category: '', subcategory: '', dimensions: '', colors: '', foods: '', drinks: ''
+    });
+    setImageFile(null);
+    setShowCrudModal(true);
+  };
+
+  const abrirEditarModal = (item) => {
+    setEditingItem(item);
+    setFormData({
+      type: item.type,
+      title: item.title,
+      description: item.description,
+      price: item.price,
+      category: item.category || '',
+      subcategory: item.subcategory || '',
+      dimensions: item.dimensions || '',
+      colors: item.colors ? item.colors.join(', ') : '',
+      foods: item.foods ? item.foods.join(', ') : '',
+      drinks: item.drinks ? item.drinks.join(', ') : ''
+    });
+    setImageFile(null);
+    setShowCrudModal(true);
+  };
+
+  const fecharCrudModal = () => {
+    setShowCrudModal(false);
+    setEditingItem(null);
+  };
+
+  // Filtros em tempo de execução
+  const produtosFiltrados = produtos.filter(item => {
+    const matchesBusca = item.title.toLowerCase().includes(busca.toLowerCase()) || 
+                          (item.description && item.description.toLowerCase().includes(busca.toLowerCase()));
+    const matchesTipo = filtroTipo === 'all' || item.type === filtroTipo;
+    const matchesCategoria = categoriaAtiva === 'all' || item.category === categoriaAtiva;
+    return matchesBusca && matchesTipo && matchesCategoria;
+  });
+
+  // Extrai categorias dinâmicas presentes no banco para os botões de filtro
+  const categoriasDisponiveis = ['all', ...new Set(produtos.filter(i => filtroTipo === 'all' || i.type === filtroTipo).map(i => i.category).filter(Boolean))];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 transition-colors">
-      <div ref={topRef}></div>
-      
-      {/* NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-[#192d55] text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <button onClick={() => topRef.current?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity">
-            <div className="w-10 h-10 bg-white rounded-sm flex items-center justify-center">
-              <span className="text-[#192d55] font-serif font-bold text-xl">S</span>
-            </div>
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased">
+      {/* Header Institucional */}
+      <header className="bg-slate-900 text-white shadow-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-center sm:text-left">
+            <div className="bg-red-600 text-white font-black px-3 py-1 rounded tracking-wider text-sm">SEAP MA</div>
             <div>
-              <h1 className="font-serif font-bold text-lg leading-tight uppercase tracking-widest">SEAP</h1>
-              <p className="text-[10px] tracking-widest opacity-80 uppercase">Maranhão</p>
+              <h1 className="text-xl font-bold tracking-tight">Catálogo de Ativos e Panificação</h1>
+              <p className="text-xs text-slate-400">Trabalho Operacional e Ressocialização</p>
             </div>
-          </button>
+          </div>
+          
+          <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+            {isAdmin ? (
+              <>
+                <button onClick={abrirCriarModal} className="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded text-sm font-semibold transition shadow-sm w-full sm:w-auto">
+                  + Novo Item
+                </button>
+                <button onClick={handleLogout} className="bg-slate-700 hover:bg-slate-600 px-3 py-2 rounded text-sm transition">
+                  Sair
+                </button>
+              </>
+            ) : (
+              <button onClick={() => setShowLoginModal(true)} className="bg-slate-800 border border-slate-700 hover:bg-slate-700 px-4 py-2 rounded text-sm font-semibold transition w-full sm:w-auto">
+                Painel do Servidor
+              </button>
+            )}
+          </div>
+        </div>
+      </header>
 
-          <div className="w-full md:w-1/3">
+      {/* Seção de Busca e Filtros */}
+      <section className="max-w-7xl mx-auto px-4 pt-8 pb-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 md:p-6 flex flex-col gap-4">
+          {/* Barra de Pesquisa */}
+          <div className="w-full">
             <input 
               type="text" 
-              placeholder="Pesquisar ativos ou serviços..." 
-              value={searchQuery}
-              onChange={handleSearch}
-              className="w-full px-4 py-2 text-sm text-gray-900 rounded-sm border-none focus:ring-2 focus:ring-[#c78c2b] outline-none"
+              placeholder="Pesquisar ativos por nome ou descrição..." 
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-slate-900 transition"
             />
           </div>
 
-          <div className="flex items-center gap-4">
-            <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/10 rounded-sm transition">
-              {darkMode ? '☀️' : '🌙'}
+          {/* Filtros Principais */}
+          <div className="flex flex-wrap items-center gap-2 border-b border-slate-100 pb-4">
+            <button onClick={() => { setFiltroTipo('all'); setCategoriaAtiva('all'); }} className={`px-4 py-2 rounded-lg text-sm font-bold transition ${filtroTipo === 'all' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              Todos os Ativos
             </button>
-            {isAdmin ? (
-              <div className="flex items-center gap-3">
-                <span className="bg-[#c78c2b] text-[#192d55] text-xs font-bold px-3 py-1 rounded-sm uppercase tracking-wider">Modo Servidor</span>
-                {/* MODIFICAÇÃO: Botão de Sair chama a função handleLogout */}
-                <button onClick={handleLogout} className="text-sm hover:underline text-red-300 font-medium">Sair</button>
-              </div>
-            ) : (
-              <button onClick={() => setShowLogin(true)} className="border border-white/30 hover:border-white px-5 py-2 text-sm uppercase tracking-widest font-bold transition-all rounded-sm hover:bg-white hover:text-[#192d55]">
-                Servidor
-              </button>
-            )}
-          </div>
-        </div>
-      </nav>
-
-      {/* CONTEÚDO PRINCIPAL */}
-      <main className="max-w-7xl mx-auto px-6 py-12 space-y-32">
-        
-        {/* HERO */}
-        <section className="relative pt-12 pb-24 text-center border-b border-gray-200 dark:border-slate-700">
-          <h2 className="font-serif text-5xl md:text-7xl font-bold tracking-tight text-[#192d55] dark:text-white mb-6">
-            {sections.hero.title}
-          </h2>
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
-            {sections.hero.subtitle}
-          </p>
-        </section>
-
-        {/* QUEM SOMOS */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
-          <div className="order-2 md:order-1">
-            <h3 className="font-serif text-3xl md:text-4xl text-[#d12229] mb-8">Quem somos nós</h3>
-            <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">
-              {sections.about.text}
-            </p>
-          </div>
-          <div className="order-1 md:order-2 aspect-[3/4] overflow-hidden bg-gray-100">
-            <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
-          </div>
-        </section>
-
-        {/* TRABALHO COM DIGNIDADE */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
-          <div className="aspect-[3/4] overflow-hidden bg-gray-100">
-            <img src={sections.dignity.img} alt="Trabalho com Dignidade" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
-          </div>
-          <div>
-            <h3 className="font-serif text-3xl md:text-4xl text-[#c78c2b] mb-8">Trabalho com Dignidade</h3>
-            <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">
-              {sections.dignity.text}
-            </p>
-          </div>
-        </section>
-
-        {/* SERVIÇOS DE LIMPEZA */}
-        <section className="relative">
-           <div className="w-full aspect-[21/9] md:aspect-[21/6] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
-              {sections.cleaning.img ? (
-                <img src={sections.cleaning.img} alt="Limpeza" className="w-full h-full object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen" />
-              ) : (
-                <span className="text-gray-400 font-serif italic">Espaço reservado para imagem de serviços</span>
-              )}
-           </div>
-           <h3 className="font-serif text-2xl mt-6 text-center text-gray-800 dark:text-gray-200 uppercase tracking-widest">Serviços de Manutenção e Limpeza</h3>
-        </section>
-
-        {/* CATÁLOGO E PADARIA */}
-        <section ref={productsRef} className="pt-12 relative">
-          <div className="flex justify-between items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4">
-            <h3 className="font-serif text-4xl text-[#192d55] dark:text-white">Portfólio</h3>
-            {isAdmin && (
-              <button 
-                onClick={() => { setItemToEdit(null); setIsModalOpen(true); }}
-                className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest rounded-sm hover:bg-[#192d55]/90 transition"
-              >
-                + Novo Item
-              </button>
-            )}
+            <button onClick={() => { setFiltroTipo('product'); setCategoriaAtiva('all'); }} className={`px-4 py-2 rounded-lg text-sm font-bold transition ${filtroTipo === 'product' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              Móveis e Estruturas
+            </button>
+            <button onClick={() => { setFiltroTipo('bakery'); setCategoriaAtiva('all'); }} className={`px-4 py-2 rounded-lg text-sm font-bold transition ${filtroTipo === 'bakery' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+              Combos de Padaria
+            </button>
           </div>
 
-          {/* Filtro de Categorias */}
-          {!isLoading && catalog.some(item => item.type === 'product') && (
-            <div className="mb-10">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 block mb-3">
-                Filtrar por Departamento
-              </span>
-              <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x">
-                {availableCategories.map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setSelectedCategory(cat)}
-                    className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition snap-start whitespace-nowrap ${
-                      selectedCategory === cat
-                        ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md'
-                        : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {isLoading ? (
-            <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando com base de dados SEAP...</div>
-          ) : filteredCatalog.length === 0 ? (
-            <div className="text-center py-20 text-gray-500 font-serif italic">Nenhum ativo localizado no catálogo para esta seleção.</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-              {filteredCatalog.map(item => (
-                item.type === 'bakery' ? (
-                  <BakeryCard 
-                    key={item.id} 
-                    item={item} 
-                    isAdmin={isAdmin} 
-                    onDelete={() => handleDeleteItem(item.id)} 
-                    isModalOpen={isModalOpen}
-                    setIsModalOpen={setIsModalOpen}
-                    itemToEdit={itemToEdit}
-                    setItemToEdit={setItemToEdit}
-                    handleSaveItem={handleSaveItem}
-                  />
-                ) : (
-                  <ProductCard 
-                    key={item.id} 
-                    item={item} 
-                    isAdmin={isAdmin} 
-                    onDelete={() => handleDeleteItem(item.id)} 
-                    onEdit={() => { setItemToEdit(item); setIsModalOpen(true); }}
-                  />
-                )
+          {/* Subcategorias dinâmicas */}
+          {categoriasDisponiveis.length > 1 && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Filtrar Categoria:</span>
+              {categoriasDisponiveis.map(cat => (
+                <button key={cat} onClick={() => setCategoriaAtiva(cat)} className={`px-3 py-1 rounded-full text-xs font-semibold border transition ${categoriaAtiva === cat ? 'bg-slate-800 text-white border-slate-800' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+                  {cat === 'all' ? 'Ver Todas' : cat}
+                </button>
               ))}
             </div>
           )}
-        </section>
+        </div>
+      </section>
+
+      {/* Grid do Catálogo Principal */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900 mx-auto mb-4"></div>
+            <p className="text-slate-500 font-medium">Sincronizando com o banco de dados da SEAP...</p>
+          </div>
+        ) : erro ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl text-center max-w-xl mx-auto my-12">
+            <p className="font-bold">Erro de Conexão</p>
+            <p className="text-sm mt-1">{erro}</p>
+            <button onClick={carregarCatalogos} className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-red-700 transition">Tentar Novamente</button>
+          </div>
+        ) : produtosFiltrados.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-slate-100">
+            <p className="text-slate-400 text-lg">Nenhum ativo ou produto localizado para os filtros selecionados.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {produtosFiltrados.map((item) => (
+              <div key={item.id} className="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden flex flex-col justify-between group hover:shadow-md transition duration-200">
+                <div>
+                  {/* Container da Imagem */}
+                  <div className="w-full h-48 bg-slate-100 relative overflow-hidden">
+                    {item.image ? (
+                      <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-slate-300 text-xs font-bold uppercase p-4 text-center bg-slate-200">Sem imagem institucional</div>
+                    )}
+                    <span className={`absolute top-3 right-3 text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded shadow-sm text-white ${item.type === 'product' ? 'bg-blue-600' : 'bg-amber-600'}`}>
+                      {item.type === 'product' ? 'Ativo' : 'Padaria'}
+                    </span>
+                  </div>
+
+                  {/* Detalhes do Card (Legibilidade Aumentada para Dispositivos Móveis) */}
+                  <div className="p-4 md:p-5">
+                    {item.category && (
+                      <span className="text-xs font-bold text-slate-400 uppercase tracking-wide block mb-1">{item.category}</span>
+                    )}
+                    <h3 className="text-lg font-bold text-slate-900 leading-snug mb-2 line-clamp-2">{item.title}</h3>
+                    <p className="text-sm text-slate-600 leading-relaxed mb-4 line-clamp-3">{item.description || 'Sem descrição fornecida.'}</p>
+                    
+                    {/* Especificações em Chips Visíveis */}
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {item.dimensions && <span className="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded font-medium">Dimensões: {item.dimensions}</span>}
+                      {item.colors?.map(c => <span key={c} className="bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded font-medium">{c}</span>)}
+                      {item.foods?.map(f => <span key={f} className="bg-amber-50 text-amber-800 text-xs px-2 py-1 rounded font-medium">{f}</span>)}
+                      {item.drinks?.map(d => <span key={d} className="bg-emerald-50 text-emerald-800 text-xs px-2 py-1 rounded font-medium">{d}</span>)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rodapé do Card */}
+                <div className="p-4 border-t border-slate-50 bg-slate-50/50 flex items-center justify-between gap-2">
+                  <span className="text-lg font-black text-slate-900">
+                    {item.price > 0 ? `R$ ${item.price.toFixed(2)}` : 'Sob Consulta'}
+                  </span>
+                  
+                  {isAdmin && (
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => abrirEditarModal(item)} className="bg-slate-200 hover:bg-slate-300 text-slate-700 p-2 rounded text-xs font-bold transition">Editar</button>
+                      <button onClick={() => handleDeleteItem(item.id)} className="bg-red-50 hover:bg-red-100 text-red-600 p-2 rounded text-xs font-bold transition">Excluir</button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
 
-      {/* RODAPÉ */}
-      <footer className="bg-[#0f172a] text-white pt-20 pb-10 border-t-4 border-[#c78c2b]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
-          <div className="col-span-1 md:col-span-1">
-             <div className="w-16 h-16 bg-white flex items-center justify-center mb-6">
-               <span className="text-[#192d55] font-serif font-bold text-3xl">S</span>
-             </div>
-             <p className="text-sm opacity-70 font-light leading-relaxed">Secretaria de Estado de Administração Penitenciária do Maranhão.</p>
-          </div>
-          <div>
-            <h4 className="font-serif text-lg text-[#c78c2b] mb-6 uppercase tracking-widest">Navegação</h4>
-            <ul className="space-y-3 font-light text-sm opacity-80">
-              <li><button onClick={() => topRef.current?.scrollIntoView()} className="hover:text-white transition">Início</button></li>
-              <li><button onClick={() => productsRef.current?.scrollIntoView()} className="hover:text-white transition">Ativos & Serviços</button></li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-serif text-lg text-[#c78c2b] mb-6 uppercase tracking-widest">Contactos</h4>
-            <ul className="space-y-3 font-light text-sm opacity-80">
-              <li>Av. Jerônimo de Albuquerque, s/n</li>
-              <li>Ed. Clodomir Millet - São Luís/MA</li>
-              <li className="pt-2 font-medium text-white">atendimento@seap.ma.gov.br</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-serif text-lg text-[#c78c2b] mb-6 uppercase tracking-widest">Redes Sociais</h4>
-            <ul className="space-y-3 font-light text-sm opacity-80">
-              <li><a href="https://instagram.com/seapma" target="_blank" rel="noreferrer" className="hover:text-white transition">Instagram Oficial</a></li>
-              <li><a href="https://seap.ma.gov.br" target="_blank" rel="noreferrer" className="hover:text-white transition">Portal do Governo</a></li>
-            </ul>
+      {/* MODAL 1: LOGIN DO SERVIDOR */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
+            <h2 className="text-xl font-bold text-slate-900 mb-1">Autenticação de Segurança</h2>
+            <p className="text-xs text-slate-500 mb-6">Acesso restrito para servidores autorizados da SEAP MA.</p>
+            
+            <form onSubmit={handleLogin} className="flex flex-col gap-4">
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Identificador do Servidor</label>
+                <input type="text" required value={loginForm.username} onChange={(e) => setLoginForm({...loginForm, username: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-slate-950" placeholder="ex: admin_seap" />
+              </div>
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Senha Institucional</label>
+                <input type="password" required value={loginForm.password} onChange={(e) => setLoginForm({...loginForm, password: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-slate-950" placeholder="••••••••" />
+              </div>
+              
+              <div className="flex gap-2 mt-4 justify-end">
+                <button type="button" onClick={() => setShowLoginModal(false)} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Cancelar</button>
+                <button type="submit" className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-sm font-semibold transition">Entrar no Sistema</button>
+              </div>
+            </form>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto px-6 pt-8 border-t border-white/10 text-center text-xs opacity-50 font-light uppercase tracking-widest">
-          &copy; {new Date().getFullYear()} Governo do Estado do Maranhão.
-        </div>
-      </footer>
+      )}
 
-      {/* LOGIN MODAL */}
-      {showLogin && (
-        <div className="fixed inset-0 bg-[#0f172a]/90 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
-          <form onSubmit={handleLogin} className="bg-white dark:bg-slate-800 p-10 rounded-sm shadow-2xl w-full max-w-sm border border-gray-200 dark:border-slate-700">
-            <h2 className="font-serif text-2xl text-[#192d55] dark:text-white mb-2">Acesso Restrito</h2>
-            <p className="text-xs text-gray-500 mb-8 uppercase tracking-widest">Autenticação de Servidor</p>
-            {/* MODIFICAÇÃO: Atributos 'name' mapeados para captura direta no envio */}
-            <input type="text" name="username" placeholder="Utilizador SEAP" className="w-full border-b border-gray-300 dark:border-gray-600 bg-transparent py-3 outline-none focus:border-[#c78c2b] transition-colors mb-4 text-sm dark:text-white" required />
-            <input type="password" name="password" placeholder="Senha Institucional" className="w-full border-b border-gray-300 dark:border-gray-600 bg-transparent py-3 outline-none focus:border-[#c78c2b] transition-colors mb-8 text-sm dark:text-white" required />
-            <div className="flex gap-4">
-              <button type="button" onClick={() => setShowLogin(false)} className="w-full py-3 text-sm uppercase tracking-widest text-gray-500 transition">Cancelar</button>
-              <button type="submit" disabled={isLoading} className="w-full py-3 text-sm uppercase tracking-widest bg-[#192d55] text-white transition disabled:opacity-50">
-                {isLoading ? 'Autenticando...' : 'Entrar'}
-              </button>
-            </div>
-          </form>
+      {/* MODAL 2: OPERAÇÕES CRUD (CRIAR E EDITAR ATIVOS) */}
+      {showCrudModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+          <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6 relative my-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">{editingItem ? 'Editar Ativo Institucional' : 'Catalogar Novo Ativo / Item'}</h2>
+            
+            <form onSubmit={handleSaveItem} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Tipo de Registro</label>
+                <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+                  <option value="product">Móveis / Estruturas (Ativos Oficiais)</option>
+                  <option value="bakery">Panificação / Combos de Comida</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Título do Item</label>
+                <input type="text" required value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="Ex: Cadeira Executiva Ergonômica" />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Preço Operacional (R$)</label>
+                <input type="number" step="0.01" required value={formData.price} onChange={(e) => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="0.00" />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Categoria Geral</label>
+                <input type="text" value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="Ex: Escritório, Padaria Comunitária" />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Subcategoria</label>
+                <input type="text" value={formData.subcategory} onChange={(e) => setFormData({...formData, subcategory: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="Ex: Cadeiras, Pães Especiais" />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Descrição Informativa</label>
+                <textarea rows="2" value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="Mapeie os detalhes operacionais do ativo ou combo..."></textarea>
+              </div>
+
+              {/* Campos Condicionais com base no Tipo de Ativo */}
+              {formData.type === 'product' ? (
+                <>
+                  <div>
+                    <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Dimensões / Tamanho</label>
+                    <input type="text" value={formData.dimensions} onChange={(e) => setFormData({...formData, dimensions: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="Ex: 120x60x75 cm" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Cores Disponíveis (Separadas por vírgula)</label>
+                    <input type="text" value={formData.colors} onChange={(e) => setFormData({...formData, colors: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="Preto, Azul, Cinza" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div>
+                    <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Alimentos Incluídos (Separados por vírgula)</label>
+                    <input type="text" value={formData.foods} onChange={(e) => setFormData({...formData, foods: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="Pão francês, Bolo de rolo" />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Bebidas Incluídas (Separadas por vírgula)</label>
+                    <input type="text" value={formData.drinks} onChange={(e) => setFormData({...formData, drinks: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2" placeholder="Café com leite, Suco de caju" />
+                  </div>
+                </>
+              )}
+
+              <div className="md:col-span-2">
+                <label className="text-xs font-bold uppercase text-slate-500 block mb-1">Imagem do Produto (Upload Físico)</label>
+                <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm" />
+                <p className="text-[11px] text-slate-400 mt-1">Deixe em branco para manter a imagem atual se estiver editando.</p>
+              </div>
+
+              <div className="md:col-span-2 flex gap-2 mt-4 justify-end border-t border-slate-100 pt-4">
+                <button type="button" onClick={fecharCrudModal} className="px-4 py-2 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition">Cancelar</button>
+                <button type="submit" className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold transition">Salvar Alterações</button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
   );
 }
-
-// Subcomponentes Auxiliares
-const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
-  <div className={`absolute ${isCard ? 'top-2 right-2' : 'top-0 right-0'} z-10 flex gap-1`}>
-    <button onClick={onEdit} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition">
-      [Editar] {label}
-    </button>
-    {isCard && (
-      <button onClick={onDelete} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition">
-        Excluir
-      </button>
-    )}
-  </div>
-);
-
-const ProductCard = ({ item, isAdmin, onDelete, onEdit }) => (
-  <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 hover:shadow-xl transition-shadow duration-500">
-    {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
-    
-    <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative">
-      <img src={item.image || 'https://placehold.co/600x450/e2e8f0/475569?text=Sem+Imagem'} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-      
-      {item.category && (
-        <div className="absolute bottom-2 left-2 flex gap-1 flex-wrap max-w-[90%]">
-          <span className="bg-[#192d55]/90 backdrop-blur-sm text-white text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm">
-            {item.category}
-          </span>
-          {item.subcategory && (
-            <span className="bg-[#c78c2b]/90 backdrop-blur-sm text-[#192d55] text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm">
-              {item.subcategory}
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-    
-    <div className="p-6 flex-grow flex flex-col justify-between">
-      <div>
-        {item.colors && item.colors.length > 0 && (
-          <div className="flex gap-2 mb-4">
-            {item.colors.map(c => (
-              <div key={c.name} title={c.name} className="w-4 h-4 rounded-full border border-gray-300 shadow-sm" style={{ backgroundColor: c.code }} />
-            ))}
-          </div>
-        )}
-        <h4 className="font-serif text-xl font-bold text-gray-900 dark:text-white mb-3 leading-tight">{item.title}</h4>
-        {item.description && <p className="text-sm text-gray-600 dark:text-gray-400 font-light mb-4 line-clamp-3">{item.description}</p>}
-        {item.dimensions && <p className="text-xs text-gray-500 uppercase tracking-widest mb-6">Dim: {item.dimensions}</p>}
-      </div>
-      
-      <div className="border-t border-gray-100 dark:border-slate-700 pt-4 mt-auto">
-        <span className="text-lg font-serif text-[#2d6a4f] dark:text-[#4ade80]">
-          R$ {item.price ? item.price.toFixed(2) : '0.00'} <span className="text-[10px] text-gray-400 uppercase tracking-widest">/ un</span>
-        </span>
-      </div>
-    </div>
-  </div>
-);
-
-const BakeryCard = ({ item, isAdmin, onDelete, isModalOpen, setIsModalOpen, itemToEdit, setItemToEdit, handleSaveItem }) => (
-  <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 hover:shadow-xl transition-shadow duration-500 p-8">
-    {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onDelete} onEdit={() => { setItemToEdit(item); setIsModalOpen(true); }} />}
-    <div className="text-center mb-8 border-b border-gray-100 dark:border-slate-700 pb-6">
-       <span className="text-[#c78c2b] text-xs font-bold uppercase tracking-widest block mb-2">Serviço de Padaria</span>
-       <h4 className="font-serif text-2xl font-bold text-gray-900 dark:text-white leading-tight">{item.title}</h4>
-       {item.description && <p className="text-sm text-gray-500 mt-3 font-light italic">"{item.description}"</p>}
-    </div>
-    
-    <div className="grid grid-cols-2 gap-6 flex-grow mb-8 text-sm text-gray-700 dark:text-gray-300 font-light">
-      <div>
-        <h5 className="font-bold text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Comestíveis</h5>
-        <ul className="space-y-2 list-disc list-inside marker:text-[#c78c2b]">
-          {(item.foods || []).map((f, i) => <li key={i}>{f}</li>)}
-        </ul>
-      </div>
-      <div>
-        <h5 className="font-bold text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Bebidas</h5>
-        <ul className="space-y-2 list-disc list-inside marker:text-[#d12229]">
-          {(item.drinks || []).map((d, i) => <li key={i}>{d}</li>)}
-        </ul>
-      </div>
-    </div>
-    
-    <div className="text-center bg-gray-50 dark:bg-slate-900 py-4 rounded-sm mt-auto">
-      <span className="text-sm text-gray-500 uppercase tracking-widest block mb-1">Investimento</span>
-      <span className="text-2xl font-serif text-[#2d6a4f] dark:text-[#4ade80]">
-        R$ {item.price ? item.price.toFixed(2) : '0.00'} <span className="text-[10px] text-gray-400 uppercase tracking-widest">/ pessoa</span>
-      </span>
-    </div>
-    
-    <AdminModal 
-        isOpen={isModalOpen} 
-        onClose={() => { setIsModalOpen(false); setItemToEdit(null); }} 
-        itemToEdit={itemToEdit}
-        onSave={handleSaveItem} 
-      />
-  </div>
-);
