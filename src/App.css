@@ -1,0 +1,118 @@
+/* Variáveis de Tema SEAP */
+:root {
+  --seap-navy: #192d55;
+  --seap-green: #2d6a4f;
+  --seap-accent: #3b82f6;
+  --accent-bg: #eff6ff;
+  --border: #e5e7eb;
+  --text-h: #111827;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Base de layout */
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  background-color: #f9fafb;
+  color: #374151;
+}
+
+/* --- Hero e Institucional --- */
+.hero {
+  position: relative;
+  text-align: center;
+  padding: 4rem 1rem;
+  background: white;
+  border-bottom: 1px solid var(--border);
+}
+
+.hero h1 {
+  color: var(--seap-navy);
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+/* --- Grid de Produtos e Serviços --- */
+#productGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem 0;
+}
+
+/* --- Painel Administrativo --- */
+#adminBanner {
+  background: var(--seap-green);
+  color: white;
+  padding: 0.5rem;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* --- Componentes de Busca e Filtros --- */
+.filter-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--border);
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.filter-btn.active {
+  background: var(--seap-navy);
+  color: white;
+}
+
+/* --- Rodapé --- */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 2rem;
+  background: #f3f4f6;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+/* --- Responsividade --- */
+@media (max-width: 1024px) {
+  #productGrid { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 1.8rem; }
+}
+
+/* --- Utilitários --- */
+.hidden { display: none !important; }
+.image-loading { background: #e5e7eb; animation: pulse 1.5s infinite; }
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+/* Rodapé Institucional Otimizado */
+.footer-container {
+  background: var(--seap-navy);
+  color: white;
+  padding: 3rem 1rem;
+  margin-top: 4rem;
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-logo { height: 60px; margin-bottom: 1rem; }
+
+/* Modo Servidor Visual */
+.admin-badge {
+  background: #059669;
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
