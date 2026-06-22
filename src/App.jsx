@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
-import seap_logo from 'C:/Users/itaua/Downloads/seap-portfolio-frontend/seap-portfolio/public/seap_logo.png';
 
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
@@ -407,11 +406,7 @@ const convertToWebP = (file, quality = 0.8) => {
         <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
           <button onClick={() => topRef.current?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-sm flex items-center justify-center">
-              <img 
-                src={seap_logo} 
-                alt="Logo do Órgão" 
-                style={{ height: '40px', width: 'auto', cursor: 'pointer' }} 
-              />
+              <img src="/seap_logo.png" alt="SEAP Logo" />
             </div>
             <div>
               <h1 className="font-serif font-bold text-lg leading-tight uppercase tracking-widest">CATÁLOGO</h1>
@@ -652,11 +647,7 @@ const convertToWebP = (file, quality = 0.8) => {
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           <div className="col-span-1 md:col-span-1">
              <div className="w-16 h-16 flex items-center justify-center mb-6">
-               <img 
-                src={seap_logo} 
-                alt="Logo do Órgão" 
-                style={{ height: '40px', width: 'auto', cursor: 'pointer' }} 
-              />
+               <img src="/seap_logo.png" alt="SEAP Logo" />
              </div>
              <p className="text-sm opacity-70 font-light leading-relaxed">Secretaria de Administração Penitenciária</p>
           </div>
