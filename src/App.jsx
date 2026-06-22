@@ -495,7 +495,19 @@ const convertToWebP = (file, quality = 0.8) => {
         <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
           {isAdmin && <AdminEditBtn label="Editar Trabalho c/ Dignidade" />}
           <div className="aspect-[1956/1505] overflow-hidden">
-            <img src={sections.dignity.img} alt="Trabalho com Dignidade" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+            {/* IMAGEM PARA O MODO CLARO (Oculta no escuro) */}
+            <img 
+              src="/Trabalho_com_Dignidade_claro.png" 
+              alt="Programa Trabalho com Dignidade" 
+              className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-md" 
+            />
+
+            {/* IMAGEM PARA O MODO ESCURO (Oculta no claro e visível no escuro) */}
+            <img 
+              src="/Trabalho_com_Dignidade_escuro.png" 
+              alt="Programa Trabalho com Dignidade" 
+              className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" 
+            />
           </div>
           <div>
             <h3 className="font-serif text-3xl md:text-4xl text-[#c78c2b] mb-8">Trabalho com Dignidade</h3>
@@ -1039,20 +1051,32 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   const priceStr = item.price ? item.price.toFixed(2) : '0.00';
   const [intPart, decPart] = priceStr.split('.');
   
-  // Estado que gerencia a imagem exibida no card (Muda ao clicar nas opções)
-  const defaultImage = item.image_url || item.image || 'https://placehold.co/600x450/e2e8f0/475569?text=Sem+Imagem';
+  // Lógica de Fallback: Prioriza a imagem principal, depois o 1º MDF com imagem, depois a 1ª Cor com imagem
+  const defaultImage = useMemo(() => {
+    if (item.image_url || item.image) return item.image_url || item.image;
+    
+    const firstMdfWithImg = item.mdfs?.find(m => m.image_url)?.image_url;
+    if (firstMdfWithImg) return firstMdfWithImg;
+    
+    const firstColorWithImg = item.colors?.find(c => c.image_url)?.image_url;
+    if (firstColorWithImg) return firstColorWithImg;
+    
+    return 'https://placehold.co/600x450/e2e8f0/475569?text=Sem+Imagem';
+  }, [item.image_url, item.image, item.mdfs, item.colors]);
+
+  // Estado que gerencia a imagem exibida no card
   const [currentImage, setCurrentImage] = useState(defaultImage);
 
-  // Garante que a imagem resete caso o produto mude no catálogo
+  // Sincroniza o estado se o catálogo mudar ou houver fallback
   useEffect(() => {
     setCurrentImage(defaultImage);
-  }, [item.image_url, item.image, defaultImage]);
+  }, [defaultImage]);
 
   return (
     <div className="group flex flex-col relative bg-white dark:bg-slate-800 border-2 border-black rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
       {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
       
-      {/* Container da Imagem (Passa o currentImage pro Zoom) */}
+      {/* Container da Imagem */}
       <div 
         className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative cursor-pointer"
         onClick={() => onImageClick(currentImage)}
@@ -1075,7 +1099,7 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
       
       <div className="p-6 flex-grow flex flex-col justify-between">
         <div>
-          {/* RENDERIZA OPÇÕES INTERATIVAS (CORES E MDFS) */}
+          {/* Opções interativas de cores e mdfs */}
           {((item.colors && item.colors.length > 0) || (item.mdfs && item.mdfs.length > 0)) && (
             <div className="flex gap-2 mb-4 flex-wrap items-center">
               {/* Botões de Cores */}
@@ -1089,7 +1113,6 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
                 />
               ))}
               
-              {/* Divisor visual se houver cor e mdf juntos */}
               {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div>}
               
               {/* Botões de MDFs */}
