@@ -32,4 +32,4 @@ jobs:
         username: ${{ secrets.FTP_USERNAME }}
         password: ${{ secrets.FTP_PASSWORD }}
         local-dir: ./dist/ # Mude para ./build/ se o seu projeto for Create React App antigo
-        server-dir: ./public_html/
+        server-dir: ./
