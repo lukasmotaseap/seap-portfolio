@@ -674,7 +674,7 @@ const convertToWebP = (file, quality = 0.8) => {
           </div>
         </div>
         <div className="max-w-7xl mx-auto px-6 pt-8 border-t border-white/10 text-center text-xs opacity-50 font-light uppercase tracking-widest">
-          &copy; {new Date().getFullYear()} Governo do Estado do Maranhão.
+          &copy; {new Date().getFullYear()} Governo do Estado do Maranhão
         </div>
       </footer>
 
