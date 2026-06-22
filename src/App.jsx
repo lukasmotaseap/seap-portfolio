@@ -557,7 +557,7 @@ const convertToWebP = (file, quality = 0.8) => {
           {isLoading ? (
             <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando produtos com a base de dados...</div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum ativo localizado no catálogo para esta seleção.</div>
+            <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum Produto localizado no catálogo para esta seleção.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
               {filteredProducts.map(item => (
