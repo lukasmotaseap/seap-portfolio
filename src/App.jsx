@@ -10,7 +10,7 @@ const formatBRL = (value) => {
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
   about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administração, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
-  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
+  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizan mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
   cleaning: { img: "/limpeza_e_manutenção.jpg" }
 };
 
@@ -23,6 +23,9 @@ export default function App() {
   
   const [sections, setSections] = useState(initialSections);
   const [catalog, setCatalog] = useState([]);
+
+  // ESTADO DO MODAL DE NOTIFICAÇÃO customizado
+  const [notify, setNotify] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
@@ -45,18 +48,22 @@ export default function App() {
   const topRef = useRef(null);
   const productsRef = useRef(null);
 
+  // Função helper para disparar a notificação na tela
+  const showNotification = (type, title, message) => {
+    setNotify({ isOpen: true, type, title, message });
+  };
+
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
-  // Congela o fundo (Scroll) quando a imagem ampliada está ativa
   useEffect(() => {
-    if (fullscreenImage) document.body.style.overflow = 'hidden';
+    if (fullscreenImage || notify.isOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'auto';
     
     return () => { document.body.style.overflow = 'auto'; };
-  }, [fullscreenImage]);
+  }, [fullscreenImage, notify.isOpen]);
 
   useEffect(() => {
     checkSession();
@@ -101,7 +108,7 @@ export default function App() {
         .schema('catalogo')
         .from('produtos')
         .select('*')
-        .order('title', { ascending: true }); // ORDENAÇÃO ALFABÉTICA POR TÍTULO
+        .order('title', { ascending: true });
 
       if (error) throw error;
       setCatalog(data || []);
@@ -124,7 +131,7 @@ export default function App() {
       if (error) throw error;
       setProfiles(data || []);
     } catch (error) {
-      console.error("Erro ao carregar usuários:", error.message);
+      showNotification('error', 'Erro de Sincronização', 'Não foi possível carregar a lista de usuários.');
     }
   };
 
@@ -132,9 +139,10 @@ export default function App() {
     try {
       const { error } = await supabase.schema('catalogo').from('perfis').update({ [column]: value }).eq('id', id);
       if (error) throw error;
+      showNotification('success', 'Nível de Acesso Atualizado', 'O status do servidor foi alterado com êxito.');
       loadProfiles();
     } catch (error) {
-      alert("Erro ao atualizar: " + error.message);
+      showNotification('error', 'Falha na Operação', `Não foi possível modificar o perfil: ${error.message}`);
     }
   };
 
@@ -188,33 +196,34 @@ export default function App() {
           const { error: profileError } = await supabase.schema('catalogo').from('perfis').insert([{ id: data.user.id, email: data.user.email, nome: authName, status: 'pendente', cargo: 'servidor' }]);
           if (profileError) throw new Error("Erro de permissão.");
           
-          alert("Solicitação enviada com sucesso! Aguarde liberação.");
+          showNotification('warning', 'Solicitação Registrada', 'Seu cadastro de Servidor foi enviado. Aguarde a liberação da administração.');
           setIsRegistering(false);
           setAuthName('');
           await supabase.auth.signOut();
         }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
-        if (error) throw new Error("Credenciais inválidas!");
+        if (error) throw new Error("E-mail institucional ou senha incorretos.");
 
         const { data: perfil, error: perfilError } = await supabase.schema('catalogo').from('perfis').select('status, cargo').eq('id', data.user.id).single();
-        if (perfilError) throw new Error("Erro ao validar acesso.");
+        if (perfilError) throw new Error("Erro ao validar credenciais no sistema.");
 
         if (perfil?.status === 'aprovado') {
           setIsAdmin(true);
           setUserRole(perfil.cargo);
           setShowLogin(false);
+          showNotification('success', 'Acesso Concedido', `Bem-vindo de volta! Autenticado como ${perfil.cargo === 'admin' ? 'Administrador' : 'Servidor'}.`);
         } else if (perfil?.status === 'bloqueado') {
           await supabase.auth.signOut();
-          alert("Perfil bloqueado.");
+          showNotification('error', 'Acesso Bloqueado', 'Esta conta institucional foi desativada temporariamente.');
         } else {
           await supabase.auth.signOut();
-          alert("Acesso pendente.");
+          showNotification('warning', 'Análise Pendente', 'Sua conta ainda não foi homologada por um administrador.');
         }
       }
     } catch (error) {
-      alert(error.message);
-    } finally {
+      showNotification('error', 'Falha na Autenticação', error.message);
+    } crystalline: {
       setIsLoading(false);
       setAuthPassword('');
     }
@@ -224,7 +233,7 @@ export default function App() {
     await supabase.auth.signOut();
     setIsAdmin(false);
     setUserRole(null);
-    alert("Sessão encerrada.");
+    showNotification('success', 'Desconectado', 'Sua sessão foi encerrada com segurança.');
   };
 
   const handleDeleteItem = async (id) => {
@@ -233,8 +242,9 @@ export default function App() {
       const { error } = await supabase.schema('catalogo').from('produtos').delete().eq('id', id);
       if (error) throw error;
       setCatalog(prev => prev.filter(p => p.id !== id));
+      showNotification('success', 'Registro Excluído', 'O ativo foi completamente removido do catálogo.');
     } catch (err) {
-      alert("Erro ao excluir: " + err.message);
+      showNotification('error', 'Falha na Exclusão', `Erro ao tentar remover item: ${err.message}`);
     }
   };
 
@@ -271,7 +281,7 @@ export default function App() {
         const processedFile = await convertToWebP(file, 0.8);
         const fileName = `${Date.now()}_${Math.random()}.webp`;
         const { error } = await supabase.storage.from('imagens-ativos').upload(fileName, processedFile, { contentType: 'image/webp' });
-        if (error) throw new Error("Falha upload: " + error.message);
+        if (error) throw new Error("Falha no envio da imagem: " + error.message);
         return supabase.storage.from('imagens-ativos').getPublicUrl(fileName).data.publicUrl;
       };
 
@@ -319,6 +329,7 @@ export default function App() {
 
       if (error) throw error;
 
+      showNotification('success', 'Salvo com Sucesso', 'As modificações do catálogo foram registradas na base de dados.');
       loadData(); 
       setIsProductModalOpen(false);
       setProductToEdit(null);
@@ -326,7 +337,7 @@ export default function App() {
       setBakeryToEdit(null);
       
     } catch (error) {
-      alert(`Erro: ${error.message}`);
+      showNotification('error', 'Erro ao Registrar Ativo', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -535,51 +546,141 @@ export default function App() {
               <input type="password" placeholder="Senha" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full border-b border-gray-300 dark:border-gray-600 bg-transparent py-3 outline-none focus:border-[#c78c2b] transition-colors mb-8 text-sm dark:text-white" required minLength="6" />
               <div className="flex gap-4">
                 <button type="button" onClick={() => setShowLogin(false)} className="w-full py-3 text-sm uppercase tracking-widest text-gray-500 transition">Cancelar</button>
-                <button disabled={isLoading} type="submit" className="w-full py-3 text-sm uppercase tracking-widest bg-[#192d55] text-white transition hover:bg-[#192d55]/90 disabled:opacity-50">{isLoading ? 'Aguarde...' : isRegistering ? 'Solicitar' : 'Entrar'}</button>
+                <button disabled={isLoading} type="submit" className="w-full py-3 text-sm uppercase tracking-widest bg-[#00FF40] text-white transition hover:bg-[#00FF40]/90 disabled:opacity-50">{isLoading ? 'Aguarde...' : isRegistering ? 'Solicitar' : 'Entrar'}</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
+      {/* RENDERIZAÇÃO DOS MODAIS ADICIONAIS */}
       <AdminModal isOpen={isProductModalOpen} onClose={() => { setIsProductModalOpen(false); setProductToEdit(null); }} itemToEdit={productToEdit} onSave={handleSaveItem} />
       <AdminBakeryModal isOpen={isBakeryModalOpen} onClose={() => { setIsBakeryModalOpen(false); setBakeryToEdit(null); }} itemToEdit={bakeryToEdit} onSave={handleSaveItem} />
       <AdminUsersModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} profiles={profiles} onUpdateProfile={handleUpdateProfile} />
       {fullscreenImage && <ImageZoomModal src={fullscreenImage} onClose={() => setFullscreenImage(null)} />}
+      
+      {/* NOVO MODAL CUSTOMIZADO DE NOTIFICAÇÃO DO SISTEMA */}
+      <NotificationModal config={notify} onClose={() => setNotify(prev => ({ ...prev, isOpen: false }))} />
     </div>
   );
 }
 
 // --- COMPONENTES AUXILIARES ---
+
+const NotificationModal = ({ config, onClose }) => {
+  if (!config.isOpen) return null;
+
+  let layoutClasses = 'border-green-600 bg-green-50 dark:bg-green-950/20';
+  let titleColor = 'text-green-800 dark:text-green-400';
+  let buttonStyle = 'bg-green-700 hover:bg-green-800';
+  let icon = (
+    <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+
+  if (config.type === 'error') {
+    layoutClasses = 'border-red-600 bg-red-50 dark:bg-red-950/20';
+    titleColor = 'text-red-800 dark:text-red-400';
+    buttonStyle = 'bg-red-600 hover:bg-red-700';
+    icon = (
+      <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+      </svg>
+    );
+  } else if (config.type === 'warning') {
+    layoutClasses = 'border-yellow-600 bg-yellow-50 dark:bg-yellow-950/20';
+    titleColor = 'text-yellow-800 dark:text-yellow-400';
+    buttonStyle = 'bg-yellow-600 hover:bg-yellow-700';
+    icon = (
+      <svg className="w-10 h-10 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className={`w-full max-w-sm rounded-sm border-2 p-6 shadow-2xl bg-white dark:bg-slate-800 transition-all transform scale-100 ${layoutClasses}`}>
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 mt-0.5">{icon}</div>
+          <div className="flex-1">
+            <h4 className={`font-serif text-lg font-bold ${titleColor}`}>{config.title}</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mt-1.5 leading-relaxed">{config.message}</p>
+          </div>
+        </div>
+        <div className="mt-6 flex justify-end">
+          <button 
+            onClick={onClose} 
+            className={`px-5 py-2 text-xs font-bold uppercase tracking-wider text-white rounded-sm transition-colors shadow-sm ${buttonStyle}`}
+          >
+            Entendido
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
   if (!isOpen) return null;
+
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case 'aprovado':
+        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
+      case 'bloqueado':
+        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
+      default: 
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
+    }
+  };
+
+  const getRoleStyle = (role) => {
+    if (role === 'admin') {
+      return 'bg-[#c78c2b]/10 text-[#c78c2b] border border-[#c78c2b]/30';
+    }
+    return 'bg-blue-50 text-[#192d55] dark:bg-blue-900/20 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+  };
+
   return (
     <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-2xl w-full max-w-4xl border-2 border-black max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6 border-b border-gray-200 dark:border-slate-700 pb-4">
-          <h2 className="font-serif text-2xl font-bold text-[#192d55] dark:text-white">Controle Institucional</h2>
-          <button onClick={onClose} className="text-2xl text-gray-500 hover:text-black">&times;</button>
+      <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-5xl border border-gray-200 dark:border-slate-700 max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex-shrink-0">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-[#192d55] dark:text-white">Controle Institucional</h2>
+            <p className="text-xs uppercase tracking-widest text-gray-500 mt-1">Gerenciamento de Acesso de Servidores</p>
+          </div>
+          <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-red-500 transition-colors">&times;</button>
         </div>
-        <div className="overflow-x-auto">
+        
+        <div className="overflow-x-auto flex-grow p-6">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
-              <tr className="border-b border-gray-300 dark:border-slate-600 text-xs font-bold uppercase tracking-widest text-gray-500">
-                <th className="py-3 px-4">Nome</th><th className="py-3 px-4">E-mail</th><th className="py-3 px-4">Cargo</th><th className="py-3 px-4">Status</th><th className="py-3 px-4 text-right">Ações</th>
+              <tr className="border-b-2 border-gray-200 dark:border-slate-700 text-xs font-bold uppercase tracking-widest text-gray-400">
+                <th className="py-3 px-4">Servidor</th>
+                <th className="py-3 px-4">E-mail Institucional</th>
+                <th className="py-3 px-4">Nível de Acesso</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
               {profiles.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition">
-                  <td className="py-4 px-4 font-medium dark:text-white">{p.nome || 'N/I'}</td>
+                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors group">
+                  <td className="py-4 px-4"><span className="font-bold text-[#192d55] dark:text-white block">{p.nome || 'Nome não informado'}</span></td>
                   <td className="py-4 px-4 text-gray-600 dark:text-gray-300">{p.email}</td>
-                  <td className="py-4 px-4"><span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-blue-100 text-blue-800">{p.cargo}</span></td>
-                  <td className="py-4 px-4"><span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-gray-100">{p.status}</span></td>
-                  <td className="py-4 px-4 text-right space-x-1">
-                    {p.status !== 'aprovado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'aprovado')} className="bg-green-600 text-white text-[10px] px-2 py-1 rounded">Aprovar</button>}
-                    {p.status !== 'bloqueado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'bloqueado')} className="bg-gray-700 text-white text-[10px] px-2 py-1 rounded">Bloquear</button>}
+                  <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getRoleStyle(p.cargo)}`}>{p.cargo}</span></td>
+                  <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(p.status)}`}>{p.status}</span></td>
+                  <td className="py-4 px-4 text-right space-x-2 whitespace-nowrap">
+                    {p.status !== 'aprovado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'aprovado')} className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm shadow-sm transition-all inline-block">Aprovar</button>}
+                    {p.status !== 'bloqueado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'bloqueado')} className="bg-transparent border border-[#d12229] text-[#d12229] hover:bg-[#d12229] hover:text-white dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm transition-all inline-block">Bloquear</button>}
                   </td>
                 </tr>
               ))}
+              {profiles.length === 0 && (
+                <tr><td colSpan="5" className="py-10 text-center text-gray-500 font-serif italic">Nenhum servidor cadastrado no sistema.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -662,8 +763,8 @@ const ImageZoomModal = ({ src, onClose }) => {
 
 const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
   <div className={`absolute ${isCard ? 'top-2 right-2' : 'top-0 right-0'} z-10 flex gap-1`}>
-    <button onClick={onEdit} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition">[Editar]</button>
-    {isCard && <button onClick={onDelete} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition">Excluir</button>}
+    <button onClick={onEdit} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition">[Editar]</button>
+    {isCard && <button onClick={onDelete} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition">Excluir</button>}
   </div>
 );
 
@@ -683,20 +784,17 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
 
   const hasVariations = (item.colors && item.colors.length > 0) || (item.mdfs && item.mdfs.length > 0);
   
-  // Transformação das características separadas por vírgula em itens de lista com quebra de linha
   const featureList = useMemo(() => {
     if (!item.description) return [];
     return item.description.split(',').map(f => f.trim()).filter(Boolean);
   }, [item.description]);
 
-  // Lista de subcategorias que exigem a marcação "A partir de"
   const isA_PartirDe = [
     'Mesas', 'Armários', 'Aparadores e Estantes', 
     'Estação de trabalho Individuais', 'Estação de trabalho Coletivas', 
     'Cadeiras de escritorio', 'Cadeiras e mesa (conjunto aluno)'
   ].includes(item.subcategory);
 
-  // Tratamento do sufixo de cobrança
   let suffix = 'unid.';
   if (item.subcategory === 'Pavimentação') suffix = 'm²';
 
@@ -712,62 +810,37 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
         <div>
           {hasVariations && (
             <div className="flex gap-2 mb-4 flex-wrap items-center">
-              
-              {/* OPÇÃO B: Miniatura da Imagem Principal para Reset */}
-              {(item.image_url || item.image) && (
-                <button 
-                  title="Foto Principal"
-                  onClick={() => setCurrentImage(defaultImage)}
-                  className={`w-6 h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300 dark:border-slate-600'}`}
-                >
+              {item.image_url || item.image ? (
+                <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-6 h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300 dark:border-slate-600'}`}>
                   <img src={defaultImage} alt="Principal" className="w-full h-full object-cover" />
                 </button>
-              )}
-              
-              {(item.image_url || item.image) && <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div>}
+              ) : null}
+              {item.image_url || item.image ? <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div> : null}
 
               {item.colors?.map(c => (
-                <button 
-                  key={c.name} 
-                  title={c.name} 
-                  onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)}
-                  className={`w-5 h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} 
-                  style={{ backgroundColor: c.code }} 
-                />
+                <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-5 h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} style={{ backgroundColor: c.code }} />
               ))}
-              
               {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div>}
-              
               {item.mdfs?.map(m => (
-                <button 
-                  key={m.name} 
-                  title={m.name} 
-                  onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)}
-                  className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b]' : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-200 dark:hover:bg-slate-600'}`}
-                >
-                  {m.name}
-                </button>
+                <button key={m.name} title={m.name} onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b]' : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-200 dark:hover:bg-slate-600'}`}>{m.name}</button>
               ))}
             </div>
           )}
           
           <h4 className="font-serif text-xl font-bold text-gray-900 dark:text-white mb-3 leading-tight">{item.title}</h4>
           
-          {/* CARACTERÍSTICAS COM QUEBRA DE LINHA POR VÍRGULA */}
           {featureList.length > 0 && (
              <ul className="text-sm text-gray-600 dark:text-gray-400 font-light mb-4 space-y-1 list-disc list-inside marker:text-[#c78c2b]">
                {featureList.map((f, i) => <li key={i}>{f}</li>)}
              </ul>
           )}
 
-          {/* CAMPOS CONDICIONAIS */}
           <div className="space-y-1 mb-6 text-xs text-gray-500 uppercase tracking-widest">
             {item.specification && <p><span className="font-bold text-gray-700 dark:text-gray-300">Especificação:</span> {item.specification}</p>}
             {item.fnde_standard && <p className="text-[#2d6a4f] dark:text-[#4ade80] font-bold">Padrão FNDE ✓</p>}
             {item.dimensions && <p><span className="font-bold text-gray-700 dark:text-gray-300">Dimensões:</span> {item.dimensions}</p>}
             {item.size && <p><span className="font-bold text-gray-700 dark:text-gray-300">Tamanho:</span> {item.size}</p>}
           </div>
-
         </div>
         
         <div className="flex flex-col items-start mt-auto pt-4 border-t border-gray-100 dark:border-slate-700">
@@ -777,14 +850,7 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
               <span className="font-bold text-gray-700 dark:text-gray-300">R$ {formatBRL(item.m2_price)}</span>
             </div>
           )}
-          
-          {/* REGRA SOLICITADA: Tamanho pequeno, acima do valor e alinhado à esquerda */}
-          {isA_PartirDe && (
-            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5 text-left block">
-              A partir de
-            </span>
-          )}
-          
+          {isA_PartirDe && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5 text-left block">A partir de</span>}
           <div className="flex items-end text-[#2d6a4f] dark:text-[#4ade80] font-serif text-left">
             <span className="text-sm font-bold pb-1 mr-1">R$</span>
             <span className="text-3xl font-bold leading-none">{formatBRL(item.price)}</span>
