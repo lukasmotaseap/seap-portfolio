@@ -546,7 +546,7 @@ export default function App() {
               <input type="password" placeholder="Senha" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} className="w-full border-b border-gray-300 dark:border-gray-600 bg-transparent py-3 outline-none focus:border-[#c78c2b] transition-colors mb-8 text-sm dark:text-white" required minLength="6" />
               <div className="flex gap-4">
                 <button type="button" onClick={() => setShowLogin(false)} className="w-full py-3 text-sm uppercase tracking-widest text-gray-500 transition">Cancelar</button>
-                <button disabled={isLoading} type="submit" className="w-full py-3 text-sm uppercase tracking-widest bg-[#00FF40] text-white transition hover:bg-[#00FF40]/90 disabled:opacity-50">{isLoading ? 'Aguarde...' : isRegistering ? 'Solicitar' : 'Entrar'}</button>
+                <button disabled={isLoading} type="submit" className="w-full py-3 text-sm uppercase tracking-widest bg-[#192d55] text-white transition hover:bg-[#192d55]/90 disabled:opacity-50">{isLoading ? 'Aguarde...' : isRegistering ? 'Solicitar' : 'Entrar'}</button>
               </div>
             </form>
           </div>
@@ -625,17 +625,19 @@ const NotificationModal = ({ config, onClose }) => {
 const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
   if (!isOpen) return null;
 
+  // Função para definir a cor da etiqueta de Status
   const getStatusStyle = (status) => {
     switch (status) {
       case 'aprovado':
         return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
       case 'bloqueado':
         return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
-      default: 
+      default: // pendente
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
     }
   };
 
+  // Função para definir a cor da etiqueta de Cargo
   const getRoleStyle = (role) => {
     if (role === 'admin') {
       return 'bg-[#c78c2b]/10 text-[#c78c2b] border border-[#c78c2b]/30';
@@ -646,6 +648,8 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
   return (
     <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-5xl border border-gray-200 dark:border-slate-700 max-h-[90vh] flex flex-col overflow-hidden">
+        
+        {/* Cabeçalho */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex-shrink-0">
           <div>
             <h2 className="font-serif text-2xl font-bold text-[#192d55] dark:text-white">Controle Institucional</h2>
@@ -654,7 +658,8 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
           <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-red-500 transition-colors">&times;</button>
         </div>
         
-        <div className="overflow-x-auto flex-grow p-6">
+        {/* Tabela */}
+        <div className="overflow-x-auto flex-grow custom-scrollbar p-6">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-gray-200 dark:border-slate-700 text-xs font-bold uppercase tracking-widest text-gray-400">
@@ -668,22 +673,54 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
               {profiles.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors group">
-                  <td className="py-4 px-4"><span className="font-bold text-[#192d55] dark:text-white block">{p.nome || 'Nome não informado'}</span></td>
-                  <td className="py-4 px-4 text-gray-600 dark:text-gray-300">{p.email}</td>
-                  <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getRoleStyle(p.cargo)}`}>{p.cargo}</span></td>
-                  <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(p.status)}`}>{p.status}</span></td>
+                  <td className="py-4 px-4">
+                    <span className="font-bold text-[#192d55] dark:text-white block">{p.nome || 'Nome não informado'}</span>
+                  </td>
+                  <td className="py-4 px-4 text-gray-600 dark:text-gray-300">
+                    {p.email}
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getRoleStyle(p.cargo)}`}>
+                      {p.cargo}
+                    </span>
+                  </td>
+                  <td className="py-4 px-4">
+                    <span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(p.status)}`}>
+                      {p.status}
+                    </span>
+                  </td>
                   <td className="py-4 px-4 text-right space-x-2 whitespace-nowrap">
-                    {p.status !== 'aprovado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'aprovado')} className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm shadow-sm transition-all inline-block">Aprovar</button>}
-                    {p.status !== 'bloqueado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'bloqueado')} className="bg-transparent border border-[#d12229] text-[#d12229] hover:bg-[#d12229] hover:text-white dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm transition-all inline-block">Bloquear</button>}
+                    {p.status !== 'aprovado' && (
+                      <button 
+                        onClick={() => onUpdateProfile(p.id, 'status', 'aprovado')} 
+                        className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm shadow-sm transition-all inline-block"
+                      >
+                        Aprovar
+                      </button>
+                    )}
+                    {p.status !== 'bloqueado' && (
+                      <button 
+                        onClick={() => onUpdateProfile(p.id, 'status', 'bloqueado')} 
+                        className="bg-transparent border border-[#d12229] text-[#d12229] hover:bg-[#d12229] hover:text-white dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm transition-all inline-block"
+                      >
+                        Bloquear
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
+              
               {profiles.length === 0 && (
-                <tr><td colSpan="5" className="py-10 text-center text-gray-500 font-serif italic">Nenhum servidor cadastrado no sistema.</td></tr>
+                <tr>
+                  <td colSpan="5" className="py-10 text-center text-gray-500 font-serif italic">
+                    Nenhum servidor cadastrado no sistema.
+                  </td>
+                </tr>
               )}
             </tbody>
           </table>
         </div>
+        
       </div>
     </div>
   );
@@ -763,8 +800,8 @@ const ImageZoomModal = ({ src, onClose }) => {
 
 const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
   <div className={`absolute ${isCard ? 'top-2 right-2' : 'top-0 right-0'} z-10 flex gap-1`}>
-    <button onClick={onEdit} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition">[Editar]</button>
-    {isCard && <button onClick={onDelete} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition">Excluir</button>}
+    <button onClick={onEdit} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition">[Editar]</button>
+    {isCard && <button onClick={onDelete} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition">Excluir</button>}
   </div>
 );
 
