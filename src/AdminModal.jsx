@@ -1,29 +1,58 @@
 import React, { useState, useEffect } from 'react';
 
-export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availableCategories = [] }) {
+// Nova estrutura exata fornecida por você
+const CATEGORY_STRUCTURE = {
+  'Móveis': [
+    'Mesas', 
+    'Armários', 
+    'Aparadores e Estantes', 
+    'Estação de trabalho Individuais', 
+    'Estação de trabalho Coletivas'
+  ],
+  'Cadeiras de escritorio': [
+    'Cadeiras de escritorio'
+  ],
+  'Linha escolar': [
+    'Cadeiras e mesa (conjunto aluno)', 
+    'Conjuntos de fardamentos de colégio'
+  ],
+  'Camisetas e Uniformes': [
+    'Camisetas e Uniformes'
+  ],
+  'Blocos e Meios-fios': [
+    'Blocos e Meios-fios'
+  ],
+  'Pavimentação': [
+    'Pavimentação'
+  ]
+};
+
+export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
   const [formData, setFormData] = useState({
     type: 'product',
     title: '',
-    description: '',
+    description: '', // Usado para as Características
     price: '',
     dimensions: '',
     colors: [],
-    mdfs: [], // NOVA CHAVE
+    mdfs: [],
     foods: '',
     drinks: '',
     category: '',
-    subcategory: ''
+    subcategory: '',
+    specification: '',
+    fnde_standard: false,
+    size: '',
+    m2_price: ''
   });
 
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null); 
   
-  // Estados para inserção de novas cores
   const [newColorName, setNewColorName] = useState('');
   const [newColorCode, setNewColorCode] = useState('#000000');
   const [newColorFile, setNewColorFile] = useState(null);
 
-  // Estados para inserção de novos MDFs
   const [newMdfName, setNewMdfName] = useState('');
   const [newMdfFile, setNewMdfFile] = useState(null);
 
@@ -37,12 +66,16 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
         price: itemToEdit.price || '',
         dimensions: itemToEdit.dimensions || '',
         colors: itemToEdit.colors || [],
-        mdfs: itemToEdit.mdfs || [], // CARREGA MDFS
+        mdfs: itemToEdit.mdfs || [],
         foods: itemToEdit.foods ? itemToEdit.foods.join(', ') : '',
         drinks: itemToEdit.drinks ? itemToEdit.drinks.join(', ') : '',
         image_url: itemToEdit.image_url || itemToEdit.image || '',
         category: itemToEdit.category || '',
-        subcategory: itemToEdit.subcategory || ''
+        subcategory: itemToEdit.subcategory || '',
+        specification: itemToEdit.specification || '',
+        fnde_standard: itemToEdit.fnde_standard || false,
+        size: itemToEdit.size || '',
+        m2_price: itemToEdit.m2_price || ''
       });
       setFile(null);
       setImagePreview(itemToEdit.image_url || itemToEdit.image || null);
@@ -58,7 +91,11 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
         foods: '',
         drinks: '',
         category: '',
-        subcategory: ''
+        subcategory: '',
+        specification: '',
+        fnde_standard: false,
+        size: '',
+        m2_price: ''
       });
       setFile(null);
       setImagePreview(null);
@@ -74,8 +111,12 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
   if (!isOpen) return null;
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value,
+      ...(name === 'category' ? { subcategory: '' } : {})
+    }));
   };
 
   const handleFileChange = (e) => {
@@ -86,7 +127,6 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
     }
   };
 
-  // Funções de Gestão de Cores
   const handleAddColor = () => {
     if (!newColorName.trim()) return;
     setFormData(prev => ({
@@ -104,7 +144,6 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
     }));
   };
 
-  // Funções de Gestão de MDFs
   const handleAddMdf = () => {
     if (!newMdfName.trim()) return;
     setFormData(prev => ({
@@ -127,15 +166,28 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
     const payload = {
       ...formData,
       price: parseFloat(formData.price) || 0,
-      foods: formData.type === 'bakery' 
-        ? formData.foods.split(',').map(f => f.trim()).filter(Boolean) 
-        : [],
-      drinks: formData.type === 'bakery' 
-        ? formData.drinks.split(',').map(d => d.trim()).filter(Boolean) 
-        : []
+      m2_price: formData.m2_price ? parseFloat(formData.m2_price) : null,
+      foods: formData.type === 'bakery' ? formData.foods.split(',').map(f => f.trim()).filter(Boolean) : [],
+      drinks: formData.type === 'bakery' ? formData.drinks.split(',').map(d => d.trim()).filter(Boolean) : []
     };
-    onSave(payload, file); // O onSave vai processar os files internos das cores e mdfs
+    onSave(payload, file);
   };
+
+  // Regras de renderização condicional baseadas nas subcategorias informadas
+  const isProduct = formData.type === 'product';
+  const sub = formData.subcategory;
+
+  const needsMDF = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas'].includes(sub);
+  const needsColors = ['Cadeiras de escritorio', 'Cadeiras e mesa (conjunto aluno)'].includes(sub);
+  const needsDimensions = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas', 'Blocos e Meios-fios'].includes(sub);
+  
+  // Campos exclusivos do "Cadeiras e mesa (conjunto aluno)"
+  const isConjuntoAluno = sub === 'Cadeiras e mesa (conjunto aluno)';
+
+  // Blocos e Meios-fios tem valor m² opcional
+  const isBlocos = sub === 'Blocos e Meios-fios';
+  // Pavimentação cobra apenas por m²
+  const isPavimentacao = sub === 'Pavimentação';
 
   return (
     <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 text-gray-900 overflow-hidden">
@@ -143,7 +195,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
         
         <div className="flex justify-between items-center p-6 border-b dark:border-slate-700 flex-shrink-0">
           <h2 className="font-serif text-2xl text-[#192d55] dark:text-white font-bold">
-            {itemToEdit ? 'Alterar Registro de Ativo' : 'Inserir Novo Ativo'}
+            {itemToEdit ? 'Alterar Ativo' : 'Inserir Novo Registro'}
           </h2>
           <button type="button" onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors text-3xl leading-none">&times;</button>
         </div>
@@ -153,18 +205,18 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Classificação do Ativo</label>
-                <select name="type" value={formData.type} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-base outline-none focus:border-[#c78c2b]">
-                  <option value="product" className="dark:text-slate-900">Produto de Oficina</option>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Classificação</label>
+                <select name="type" value={formData.type} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]">
+                  <option value="product" className="dark:text-slate-900">Produto de Oficina / Serviço</option>
                   <option value="bakery" className="dark:text-slate-900">Combo de Alimentos (Padaria)</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Fotografia Padrão Principal</label>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Fotografia Principal</label>
                 <div className="flex items-center gap-4">
                   {imagePreview && (
-                    <div className="w-16 h-16 rounded-sm border border-gray-300 overflow-hidden flex-shrink-0 bg-gray-100">
+                    <div className="w-12 h-12 rounded-sm border border-gray-300 overflow-hidden flex-shrink-0 bg-gray-100">
                       <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                     </div>
                   )}
@@ -173,88 +225,131 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, availa
               </div>
             </div>
 
-            {formData.type === 'product' && (
+            {isProduct && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b dark:border-slate-700 pb-8">
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Categoria *</label>
-                  <input type="text" name="category" list="category-suggestions" value={formData.category} onChange={handleChange} required={formData.type === 'product'} placeholder="Ex: Móveis, Vestuário" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-base outline-none focus:border-[#c78c2b]" />
-                  <datalist id="category-suggestions">
-                    {availableCategories.map((cat) => <option key={cat} value={cat} />)}
-                  </datalist>
+                  <select name="category" value={formData.category} onChange={handleChange} required className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]">
+                    <option value="" disabled className="dark:text-slate-900">Selecione...</option>
+                    {Object.keys(CATEGORY_STRUCTURE).map(cat => (
+                      <option key={cat} value={cat} className="dark:text-slate-900">{cat}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Subcategoria (Opcional)</label>
-                  <input type="text" name="subcategory" value={formData.subcategory} onChange={handleChange} placeholder="Ex: Cadeiras, Camisas" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-base outline-none focus:border-[#c78c2b]" />
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Subcategoria *</label>
+                  <select name="subcategory" value={formData.subcategory} onChange={handleChange} required disabled={!formData.category} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b] disabled:opacity-50">
+                    <option value="" disabled className="dark:text-slate-900">Selecione...</option>
+                    {(CATEGORY_STRUCTURE[formData.category] || []).map(subcat => (
+                      <option key={subcat} value={subcat} className="dark:text-slate-900">{subcat}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             )}
 
             <div className="space-y-6">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Identificação / Título *</label>
-                <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-base outline-none focus:border-[#c78c2b]" />
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  {isPavimentacao ? 'Nome do Serviço *' : 'Nome do Produto *'}
+                </label>
+                <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]" />
               </div>
+
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Memória Descritiva</label>
-                <textarea name="description" value={formData.description} onChange={handleChange} rows="3" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-base outline-none focus:border-[#c78c2b]"></textarea>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Características <span className="lowercase font-normal opacity-70">(separadas por vírgula para quebrar linhas no catálogo)</span></label>
+                <textarea name="description" value={formData.description} onChange={handleChange} rows="2" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]"></textarea>
               </div>
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Preço Unitário (R$) *</label>
-                <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full md:w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-base outline-none focus:border-[#c78c2b]" />
+
+              {isConjuntoAluno && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-blue-50/50 dark:bg-slate-900/30 p-4 rounded border border-blue-100 dark:border-slate-700">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Especificação</label>
+                    <input type="text" name="specification" placeholder="Ex: CJA 04/05 ou 06" value={formData.specification} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-sm p-2 text-sm outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Tamanho</label>
+                    <input type="text" name="size" placeholder="Ex: Único / Juvenil" value={formData.size} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-sm p-2 text-sm outline-none" />
+                  </div>
+                  <div className="sm:col-span-2 flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="fnde_standard" name="fnde_standard" checked={formData.fnde_standard} onChange={handleChange} className="w-4 h-4 text-[#c78c2b] focus:ring-[#c78c2b] border-gray-300 rounded" />
+                    <label htmlFor="fnde_standard" className="text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300">Garantir Padrão FNDE</label>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {isBlocos && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Valor do m² (Opcional)</label>
+                    <input type="number" step="0.01" name="m2_price" value={formData.m2_price} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]" />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                    {isPavimentacao ? 'Valor por m² (R$) *' : 'Valor Unid. (R$) *'}
+                  </label>
+                  <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]" />
+                </div>
               </div>
             </div>
 
-            {/* SEÇÃO DE VARIAÇÕES: CORES E MDFS */}
-            {formData.type === 'product' && (
+            {isProduct && (needsDimensions || needsColors || needsMDF) && (
               <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-sm border border-gray-200 dark:border-slate-700 space-y-8">
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Dimensões (L x A x P)</label>
-                  <input type="text" name="dimensions" value={formData.dimensions} onChange={handleChange} placeholder="Ex: 120 x 75 x 60 cm" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-base outline-none focus:border-[#c78c2b]" />
-                </div>
+                
+                {needsDimensions && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Dimensões (L x A x P)</label>
+                    <input type="text" name="dimensions" value={formData.dimensions} onChange={handleChange} placeholder="Ex: 120 x 75 x 60 cm" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]" />
+                  </div>
+                )}
 
-                {/* Bloco de Cores */}
-                <div>
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Variações de Cores</label>
-                  <div className="flex gap-2 mb-4 flex-wrap">
-                    {formData.colors.map((color, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm">
-                        <span className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: color.code }} />
-                        <span>{color.name} {color.file || color.image_url ? '📸' : ''}</span>
-                        <button type="button" onClick={() => handleRemoveColor(index)} className="text-gray-400 font-bold ml-1 hover:text-red-600 transition-colors">&times;</button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-                    <input type="text" placeholder="Nome (Ex: Azul)" value={newColorName} onChange={(e) => setNewColorName(e.target.value)} className="w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
-                    <input type="color" value={newColorCode} onChange={(e) => setNewColorCode(e.target.value)} className="w-12 h-[38px] border border-gray-300 dark:border-slate-600 rounded-sm bg-transparent cursor-pointer p-0.5" />
-                    <div className="flex-1 flex flex-col justify-center">
-                      <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem desta cor (Opcional)</span>
-                      <input type="file" accept="image/*" onChange={(e) => setNewColorFile(e.target.files[0])} className="text-xs" />
+                {needsColors && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Variações de Cores</label>
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      {formData.colors.map((color, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm">
+                          <span className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: color.code }} />
+                          <span>{color.name} {color.file || color.image_url ? '📸' : ''}</span>
+                          <button type="button" onClick={() => handleRemoveColor(index)} className="text-gray-400 font-bold ml-1 hover:text-red-600 transition-colors">&times;</button>
+                        </div>
+                      ))}
                     </div>
-                    <button type="button" onClick={handleAddColor} className="bg-gray-800 dark:bg-slate-700 text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider hover:bg-gray-900 transition-colors">Incluir Cor</button>
+                    <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
+                      <input type="text" placeholder="Nome (Ex: Azul)" value={newColorName} onChange={(e) => setNewColorName(e.target.value)} className="w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
+                      <input type="color" value={newColorCode} onChange={(e) => setNewColorCode(e.target.value)} className="w-12 h-[38px] border border-gray-300 dark:border-slate-600 rounded-sm bg-transparent cursor-pointer p-0.5" />
+                      <div className="flex-1 flex flex-col justify-center">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem (Opcional)</span>
+                        <input type="file" accept="image/*" onChange={(e) => setNewColorFile(e.target.files[0])} className="text-xs" />
+                      </div>
+                      <button type="button" onClick={handleAddColor} className="bg-gray-800 dark:bg-slate-700 text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider hover:bg-gray-900 transition-colors">Adicionar</button>
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Bloco de MDFs */}
-                <div className="border-t border-gray-200 dark:border-slate-700 pt-6">
-                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Opções de MDF / Madeira</label>
-                  <div className="flex gap-2 mb-4 flex-wrap">
-                    {formData.mdfs.map((mdf, index) => (
-                      <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm font-bold uppercase text-[10px]">
-                        <span>{mdf.name} {mdf.file || mdf.image_url ? '📸' : ''}</span>
-                        <button type="button" onClick={() => handleRemoveMdf(index)} className="text-gray-400 text-sm ml-1 hover:text-red-600 transition-colors">&times;</button>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-                    <input type="text" placeholder="Tipo (Ex: Carvalho)" value={newMdfName} onChange={(e) => setNewMdfName(e.target.value)} className="w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
-                    <div className="flex-1 flex flex-col justify-center">
-                      <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem deste MDF (Opcional)</span>
-                      <input type="file" accept="image/*" onChange={(e) => setNewMdfFile(e.target.files[0])} className="text-xs" />
+                {needsMDF && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Opções de MDF / Madeira</label>
+                    <div className="flex gap-2 mb-4 flex-wrap">
+                      {formData.mdfs.map((mdf, index) => (
+                        <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm font-bold uppercase text-[10px]">
+                          <span>{mdf.name} {mdf.file || mdf.image_url ? '📸' : ''}</span>
+                          <button type="button" onClick={() => handleRemoveMdf(index)} className="text-gray-400 text-sm ml-1 hover:text-red-600 transition-colors">&times;</button>
+                        </div>
+                      ))}
                     </div>
-                    <button type="button" onClick={handleAddMdf} className="bg-gray-800 dark:bg-slate-700 text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider hover:bg-gray-900 transition-colors whitespace-nowrap">Incluir MDF</button>
+                    <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
+                      <input type="text" placeholder="Tipo (Ex: Carvalho)" value={newMdfName} onChange={(e) => setNewMdfName(e.target.value)} className="w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
+                      <div className="flex-1 flex flex-col justify-center">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem (Opcional)</span>
+                        <input type="file" accept="image/*" onChange={(e) => setNewMdfFile(e.target.files[0])} className="text-xs" />
+                      </div>
+                      <button type="button" onClick={handleAddMdf} className="bg-gray-800 dark:bg-slate-700 text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider hover:bg-gray-900 transition-colors whitespace-nowrap">Adicionar</button>
+                    </div>
                   </div>
-                </div>
+                )}
 
               </div>
             )}
