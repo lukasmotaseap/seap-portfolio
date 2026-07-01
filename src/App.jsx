@@ -237,12 +237,12 @@ export default function App() {
   };
 
   const handleDeleteItem = async (id) => {
-    if (!window.confirm("Confirmar exclusão definitiva do ativo/serviço?")) return;
+    if (!window.confirm("Confirmar exclusão definitiva do produto/serviço?")) return;
     try {
       const { error } = await supabase.schema('catalogo').from('produtos').delete().eq('id', id);
       if (error) throw error;
       setCatalog(prev => prev.filter(p => p.id !== id));
-      showNotification('success', 'Registro Excluído', 'O ativo foi completamente removido do catálogo.');
+      showNotification('success', 'Registro Excluído', 'O produto foi completamente removido do catálogo.');
     } catch (err) {
       showNotification('error', 'Falha na Exclusão', `Erro ao tentar remover item: ${err.message}`);
     }
@@ -337,7 +337,7 @@ export default function App() {
       setBakeryToEdit(null);
       
     } catch (error) {
-      showNotification('error', 'Erro ao Registrar Ativo', error.message);
+      showNotification('error', 'Erro ao Registrar Produto', error.message);
     } finally {
       setIsLoading(false);
     }
@@ -423,7 +423,7 @@ export default function App() {
             <h3 className="font-serif text-4xl text-[#192d55] dark:text-white">Portfólio de Produtos</h3>
             {isAdmin && (
               <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest rounded-sm hover:bg-[#192d55]/90 transition shadow-md whitespace-nowrap">
-                + Novo Ativo
+                + Novo Produto
               </button>
             )}
           </div>
@@ -442,7 +442,7 @@ export default function App() {
           )}
 
           {isLoading ? (
-            <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando ativos...</div>
+            <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando produtos...</div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado.</div>
           ) : (
