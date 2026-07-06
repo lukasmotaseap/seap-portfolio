@@ -493,7 +493,7 @@ export default function App() {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
                 <div 
                   ref={categoryScrollRef}
-                  className="flex flex-wrap md:flex-nowrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden"
+                  className="flex overflow-x-auto gap-2 pb-2 snap-x cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_90%,transparent)]"
                 >
                   {availableCategories.map(cat => (
                     <button 
