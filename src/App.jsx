@@ -14,54 +14,47 @@ function useDraggableScroll() {
     let isDown = false;
     let startX;
     let scrollLeft;
-    let isClick = true; // Flag para distinguir clique de arraste
 
     const onMouseDown = (e) => {
       isDown = true;
-      isClick = true; // Assume que é um clique até que se prove o contrário
+      slider.classList.add('active');
       startX = e.pageX - slider.offsetLeft;
       scrollLeft = slider.scrollLeft;
-      slider.style.cursor = 'grabbing';
+      
+      // Essencial: impede a seleção de texto durante o arraste
+      document.body.style.userSelect = 'none';
     };
 
-    const onMouseLeave = () => { isDown = false; slider.style.cursor = 'grab'; };
-    const onMouseUp = () => { isDown = false; slider.style.cursor = 'grab'; };
+    const onMouseLeave = () => {
+      isDown = false;
+      slider.classList.remove('active');
+      document.body.style.userSelect = '';
+    };
+
+    const onMouseUp = () => {
+      isDown = false;
+      slider.classList.remove('active');
+      document.body.style.userSelect = '';
+    };
 
     const onMouseMove = (e) => {
       if (!isDown) return;
-      e.preventDefault();
-      
+      e.preventDefault(); // Impede o navegador de tentar arrastar o elemento como arquivo/imagem
       const x = e.pageX - slider.offsetLeft;
-      const walk = (x - startX) * 2;
-      
-      // Se moveu mais de 5px, não é mais um clique, é um arraste
-      if (Math.abs(x - (startX)) > 5) {
-        isClick = false; 
-      }
-      
+      const walk = (x - startX) * 1.5; // Ajuste a velocidade aqui
       slider.scrollLeft = scrollLeft - walk;
-    };
-
-    // Impede a ação padrão de clique se foi um arraste
-    const onClick = (e) => {
-      if (!isClick) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
     };
 
     slider.addEventListener('mousedown', onMouseDown);
     slider.addEventListener('mouseleave', onMouseLeave);
     slider.addEventListener('mouseup', onMouseUp);
     slider.addEventListener('mousemove', onMouseMove);
-    slider.addEventListener('click', onClick, true); // Captura o clique
 
     return () => {
       slider.removeEventListener('mousedown', onMouseDown);
       slider.removeEventListener('mouseleave', onMouseLeave);
       slider.removeEventListener('mouseup', onMouseUp);
       slider.removeEventListener('mousemove', onMouseMove);
-      slider.removeEventListener('click', onClick, true);
     };
   }, []);
 
@@ -529,7 +522,7 @@ export default function App() {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
                 <div 
                   ref={categoryScrollRef}
-                  className="flex overflow-x-auto gap-2 pb-2 snap-x cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_90%,transparent)]"
+                  className="flex overflow-x-auto gap-2 pb-2 snap-x cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_90%,transparent)]"
                 >
                   {availableCategories.map(cat => (
                     <button 
