@@ -11,8 +11,9 @@ function useDraggableScroll() {
     const slider = ref.current;
     if (!slider) return;
 
-    // Se estiver no desktop, não fazemos nada
-    if (window.innerWidth >= 768) return; 
+    // A lógica de arraste só será ativa se a tela for pequena
+    const isMobile = window.innerWidth < 768;
+    if (!isMobile) return;
 
     let isDown = false;
     let startX;
@@ -20,13 +21,31 @@ function useDraggableScroll() {
 
     const onMouseDown = (e) => {
       isDown = true;
-      slider.classList.add('active');
       startX = e.pageX - slider.offsetLeft;
       scrollLeft = slider.scrollLeft;
     };
-    
-    // ... restante da lógica de mouse (onMouseUp, onMouseMove, etc)
-    // O hook só será instanciado se for mobile
+
+    const onMouseLeave = () => { isDown = false; };
+    const onMouseUp = () => { isDown = false; };
+    const onMouseMove = (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - slider.offsetLeft;
+      const walk = (x - startX) * 2;
+      slider.scrollLeft = scrollLeft - walk;
+    };
+
+    slider.addEventListener('mousedown', onMouseDown);
+    slider.addEventListener('mouseleave', onMouseLeave);
+    slider.addEventListener('mouseup', onMouseUp);
+    slider.addEventListener('mousemove', onMouseMove);
+
+    return () => {
+      slider.removeEventListener('mousedown', onMouseDown);
+      slider.removeEventListener('mouseleave', onMouseLeave);
+      slider.removeEventListener('mouseup', onMouseUp);
+      slider.removeEventListener('mousemove', onMouseMove);
+    };
   }, []);
 
   return ref;
@@ -493,7 +512,7 @@ export default function App() {
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
                 <div 
                   ref={categoryScrollRef}
-                  className="flex overflow-x-auto gap-2 pb-2 snap-x cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_90%,transparent)]"
+                  className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x cursor-grab active:cursor-grabbing select-none [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,black_90%,transparent)]"
                 >
                   {availableCategories.map(cat => (
                     <button 
