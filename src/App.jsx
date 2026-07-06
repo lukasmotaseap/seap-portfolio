@@ -43,7 +43,6 @@ export default function App() {
 
   const [fullscreenImage, setFullscreenImage] = useState(null);
   
-  // NOVOS ESTADOS PARA O FILTRO DUPLO
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState('Todas');
 
@@ -146,20 +145,16 @@ export default function App() {
       showNotification('error', 'Falha na Operação', `Não foi possível modificar o perfil: ${error.message}`);
     }
   };
-
-  // --- LÓGICA MELHORADA DE FILTROS ---
   
-  // 1. Gera a lista de categorias removendo espaços extras para evitar duplicidade
   const availableCategories = useMemo(() => {
     const cats = catalog
       .filter(item => item.type === 'product' && item.category)
       .map(item => item.category.trim());
-    return ['Todos', ...new Set(cats)];
+    return ['Todos', ...new Set(cats), 'Padaria'];
   }, [catalog]);
 
-  // 2. Gera a lista de subcategorias dependendo da categoria selecionada
   const availableSubcategories = useMemo(() => {
-    if (selectedCategory === 'Todos') return [];
+    if (selectedCategory === 'Todos' || selectedCategory === 'Padaria') return [];
     
     const subs = catalog
       .filter(item => item.type === 'product' && item.category?.trim() === selectedCategory && item.subcategory)
@@ -167,7 +162,6 @@ export default function App() {
       
     const uniqueSubs = [...new Set(subs)];
     
-    // Oculta a barra de subcategorias se só existir 1 opção e ela tiver o mesmo nome da Categoria (Ex: Cadeiras de escritorio)
     if (uniqueSubs.length === 1 && uniqueSubs[0] === selectedCategory) {
       return [];
     }
@@ -175,20 +169,25 @@ export default function App() {
     return ['Todas', ...uniqueSubs];
   }, [catalog, selectedCategory]);
 
-  // 3. Aplica todos os filtros (Busca + Categoria + Subcategoria)
   const filteredProducts = useMemo(() => {
     return catalog.filter(item => {
-      if (item.type === 'bakery') return false; 
-      
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
         fuzzySearch(searchQuery, item.title) || 
         fuzzySearch(searchQuery, item.description) ||
-        fuzzySearch(searchQuery, item.category) ||
-        fuzzySearch(searchQuery, item.subcategory) ||
+        (item.category && fuzzySearch(searchQuery, item.category)) ||
+        (item.subcategory && fuzzySearch(searchQuery, item.subcategory)) ||
         (item.colors || []).some(c => c.name.toLowerCase().includes(searchLower)) ||
-        (item.mdfs || []).some(m => m.name.toLowerCase().includes(searchLower));
+        (item.mdfs || []).some(m => m.name.toLowerCase().includes(searchLower)) ||
+        (item.foods || []).some(f => f.toLowerCase().includes(searchLower)) ||
+        (item.drinks || []).some(d => d.toLowerCase().includes(searchLower));
 
+      if (selectedCategory === 'Padaria') {
+        return item.type === 'bakery' && matchesSearch;
+      }
+
+      if (item.type === 'bakery') return false; 
+      
       const itemCat = item.category?.trim();
       const itemSub = item.subcategory?.trim();
 
@@ -198,13 +197,6 @@ export default function App() {
       return matchesSearch && matchesCategory && matchesSubcategory;
     });
   }, [catalog, searchQuery, selectedCategory, selectedSubcategory]);
-
-  const filteredBakery = useMemo(() => {
-    return catalog.filter(item => {
-      if (item.type !== 'bakery') return false; 
-      return fuzzySearch(searchQuery, item.title) || fuzzySearch(searchQuery, item.description);
-    });
-  }, [catalog, searchQuery]);
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -272,7 +264,7 @@ export default function App() {
       const { error } = await supabase.schema('catalogo').from('produtos').delete().eq('id', id);
       if (error) throw error;
       setCatalog(prev => prev.filter(p => p.id !== id));
-      showNotification('success', 'Registro Excluído', 'O produto foi completamente removido do catálogo.');
+      showNotification('success', 'Registro Excluído', 'O item foi completamente removido do catálogo.');
     } catch (err) {
       showNotification('error', 'Falha na Exclusão', `Erro ao tentar remover item: ${err.message}`);
     }
@@ -335,11 +327,8 @@ export default function App() {
         price: parseFloat(formDataPayload.price) || 0,
         price_unit: formDataPayload.price_unit || (formDataPayload.type === 'bakery' ? 'pessoa' : 'unidade'),
         image_url: imageUrl,
-        
-        // TRIM para garantir que novos salvamentos entrem perfeitamente limpos
         category: formDataPayload.category ? formDataPayload.category.trim() : null,
         subcategory: formDataPayload.subcategory ? formDataPayload.subcategory.trim() : null,
-        
         dimensions: formDataPayload.dimensions || null,
         colors: processedColors,
         mdfs: processedMdfs,
@@ -393,7 +382,7 @@ export default function App() {
           </button>
 
           <div className="w-full md:w-1/3">
-            <input type="text" placeholder="Pesquisar produtos..." value={searchQuery} onChange={handleSearch} className="w-full px-4 py-2 text-sm text-gray-900 rounded-sm border-none focus:ring-2 focus:ring-[#c78c2b] outline-none" />
+            <input type="text" placeholder="Pesquisar produtos e serviços..." value={searchQuery} onChange={handleSearch} className="w-full px-4 py-2 text-sm text-gray-900 rounded-sm border-none focus:ring-2 focus:ring-[#c78c2b] outline-none" />
           </div>
 
           <div className="flex items-center gap-4">
@@ -450,21 +439,23 @@ export default function App() {
           </div>
         </section>
 
-        {/* --- SESSÃO DE PORTFÓLIO E FILTROS ATUALIZADOS --- */}
-        <section ref={productsRef} className="pt-12 relative">
-          <div className="flex justify-between items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4">
-            <h3 className="font-serif text-4xl text-[#192d55] dark:text-white">Portfólio de Produtos</h3>
+        <section ref={productsRef} className="pt-12 relative pb-16">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
+            <h3 className="font-serif text-4xl text-[#192d55] dark:text-white">Portfólio de Produtos e Serviços</h3>
             {isAdmin && (
-              <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest rounded-sm hover:bg-[#192d55]/90 transition shadow-md whitespace-nowrap">
-                + Novo Produto
-              </button>
+              <div className="flex gap-2">
+                <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest rounded-sm hover:bg-[#192d55]/90 transition shadow-md whitespace-nowrap">
+                  + Novo Produto
+                </button>
+                <button onClick={() => { setBakeryToEdit(null); setIsBakeryModalOpen(true); }} className="bg-[#c78c2b] text-[#192d55] px-4 py-2 text-sm uppercase tracking-widest rounded-sm hover:bg-[#c78c2b]/90 transition shadow-md whitespace-nowrap">
+                  + Novo Combo
+                </button>
+              </div>
             )}
           </div>
 
-          {!isLoading && catalog.some(item => item.type === 'product') && (
+          {!isLoading && catalog.length > 0 && (
             <div className="mb-10 space-y-4">
-              
-              {/* LINHA 1: FILTRO DE CATEGORIAS */}
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
                 <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x">
@@ -473,7 +464,7 @@ export default function App() {
                       key={cat} 
                       onClick={() => { 
                         setSelectedCategory(cat); 
-                        setSelectedSubcategory('Todas'); // Reseta a subcategoria ao trocar de categoria
+                        setSelectedSubcategory('Todas');
                       }} 
                       className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
                       {cat}
@@ -482,7 +473,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* LINHA 2: FILTRO DE SUBCATEGORIAS (Só aparece se houver subcategorias) */}
               {availableSubcategories.length > 0 && (
                 <div className="animate-fade-in pl-2 border-l-2 border-gray-200 dark:border-slate-700">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar Subcategoria</span>
@@ -498,61 +488,29 @@ export default function App() {
                   </div>
                 </div>
               )}
-
             </div>
           )}
 
           {isLoading ? (
-            <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando produtos...</div>
+            <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando catálogo...</div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
               {filteredProducts.map(item => (
-                <ProductCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }} onImageClick={setFullscreenImage} />
+                item.type === 'bakery' ? (
+                  <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
+                ) : (
+                  <ProductCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }} onImageClick={setFullscreenImage} />
+                )
               ))}
             </div>
           )}
         </section>
-
-        {/* PADARIA */}
-        <section className="pt-16 pb-16 relative border-t-2 border-dashed border-gray-200 dark:border-slate-700 overflow-hidden">
-          <div className="absolute inset-0 z-0 opacity-[0.05] dark:opacity-[0.08] pointer-events-none">
-            <img src="/PADARIA.jpeg" alt="Fundo Padaria" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-b from-white via-transparent to-white dark:from-slate-900 dark:via-transparent dark:to-slate-900"></div>
-          </div>
-          <div className="relative z-10">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-12 border-b border-gray-200 dark:border-slate-700 pb-8 mt-4 gap-6">
-              <div className="max-w-3xl">
-                <h3 className="font-serif text-4xl text-[#c78c2b] mb-4">Padaria</h3>
-                <p className="text-gray-600 dark:text-gray-400 font-light text-base md:text-lg leading-relaxed">
-                  As internas que trabalham nas padarias produzem os mais variados tipos de doces e salgados. Toda produção é acompanhada por profissionais, transformando eventos em experiências memoráveis.
-                </p>
-              </div>
-              {isAdmin && (
-                <button onClick={() => { setBakeryToEdit(null); setIsBakeryModalOpen(true); }} className="bg-[#c78c2b] text-[#192d55] px-6 py-3 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#c78c2b]/90 transition shadow-md whitespace-nowrap">
-                  + Novo Combo
-                </button>
-              )}
-            </div>
-
-            {isLoading ? (
-              <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando padaria...</div>
-            ) : filteredBakery.length === 0 ? (
-              <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum serviço de panificação cadastrado.</div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                {filteredBakery.map(item => (
-                  <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
       </main>
 
-      <section className="relative">
-         <div className="w-full aspect-[1749/1241] bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
+      <section className="relative mt-8">
+         <div className="w-full aspect-[1749/1241] bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
             {sections.cleaning.img ? (
               <img src={sections.cleaning.img} alt="Limpeza" className="w-full h-full object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen" />
             ) : <span className="text-gray-400 font-serif italic">Espaço reservado</span>}
@@ -623,8 +581,6 @@ export default function App() {
     </div>
   );
 }
-
-// --- COMPONENTES AUXILIARES ---
 
 const NotificationModal = ({ config, onClose }) => {
   if (!config.isOpen) return null;
@@ -858,7 +814,7 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   if (item.subcategory === 'Pavimentação') suffix = 'm²';
 
   return (
-    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border-2 border-black rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
+    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
       {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
       
       <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative cursor-pointer" onClick={() => onImageClick(currentImage)}>
@@ -923,7 +879,7 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
 
 const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
   return (
-    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border-2 border-black rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-8">
+    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-8">
       {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onDelete} onEdit={onEdit} />}
       <div className="text-center mb-8 border-b border-gray-100 dark:border-slate-700 pb-6">
          <span className="text-[#c78c2b] text-xs font-bold uppercase tracking-widest block mb-2">Serviço de Padaria</span>
