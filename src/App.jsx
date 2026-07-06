@@ -3,6 +3,49 @@ import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
 
+// Hook Customizado: Permite "Clicar e Arrastar" para rolar (Efeito Netflix)
+function useDraggableScroll() {
+  const ref = useRef(null);
+  
+  useEffect(() => {
+    const slider = ref.current;
+    if (!slider) return;
+    
+    let isDown = false;
+    let startX;
+    let scrollLeft;
+
+    const onMouseDown = (e) => {
+      isDown = true;
+      startX = e.pageX - slider.offsetLeft;
+      scrollLeft = slider.scrollLeft;
+    };
+    const onMouseLeave = () => { isDown = false; };
+    const onMouseUp = () => { isDown = false; };
+    const onMouseMove = (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - slider.offsetLeft;
+      const walk = (x - startX) * 2; // Velocidade do arrasto
+      slider.scrollLeft = scrollLeft - walk;
+    };
+
+    slider.addEventListener('mousedown', onMouseDown);
+    slider.addEventListener('mouseleave', onMouseLeave);
+    slider.addEventListener('mouseup', onMouseUp);
+    slider.addEventListener('mousemove', onMouseMove);
+
+    return () => {
+      slider.removeEventListener('mousedown', onMouseDown);
+      slider.removeEventListener('mouseleave', onMouseLeave);
+      slider.removeEventListener('mouseup', onMouseUp);
+      slider.removeEventListener('mousemove', onMouseMove);
+    };
+  }, []);
+
+  return ref;
+}
+
 const formatBRL = (value) => {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 };
@@ -48,6 +91,10 @@ export default function App() {
 
   const topRef = useRef(null);
   const productsRef = useRef(null);
+
+  // Instanciando os hooks de Scroll e Arrastar para os filtros
+  const categoryScrollRef = useDraggableScroll();
+  const subcategoryScrollRef = useDraggableScroll();
 
   const showNotification = (type, title, message) => {
     setNotify({ isOpen: true, type, title, message });
@@ -458,15 +505,15 @@ export default function App() {
             <div className="mb-10 space-y-4">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
-                <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x">
+                <div 
+                  ref={categoryScrollRef}
+                  className="flex overflow-x-auto gap-2 pb-2 snap-x cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                >
                   {availableCategories.map(cat => (
                     <button 
                       key={cat} 
-                      onClick={() => { 
-                        setSelectedCategory(cat); 
-                        setSelectedSubcategory('Todas');
-                      }} 
-                      className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
+                      onClick={() => { setSelectedCategory(cat); setSelectedSubcategory('Todas'); }} 
+                      className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
                       {cat}
                     </button>
                   ))}
@@ -476,12 +523,15 @@ export default function App() {
               {availableSubcategories.length > 0 && (
                 <div className="animate-fade-in pl-2 border-l-2 border-gray-200 dark:border-slate-700">
                   <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar Subcategoria</span>
-                  <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x">
+                  <div 
+                    ref={subcategoryScrollRef}
+                    className="flex overflow-x-auto gap-2 pb-2 snap-x cursor-grab active:cursor-grabbing [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+                  >
                     {availableSubcategories.map(sub => (
                       <button 
                         key={sub} 
                         onClick={() => setSelectedSubcategory(sub)} 
-                        className={`text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap ${selectedSubcategory === sub ? 'bg-[#192d55] text-white border-[#192d55] shadow-sm' : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
+                        className={`text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedSubcategory === sub ? 'bg-[#192d55] text-white border-[#192d55] shadow-sm' : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
                         {sub}
                       </button>
                     ))}
@@ -813,6 +863,9 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   let suffix = 'unid.';
   if (item.subcategory === 'Pavimentação') suffix = 'm²';
 
+  // Corta a string do preço ao meio na vírgula para formatação customizada
+  const [intPrice, decPrice] = formatBRL(item.price).split(',');
+
   return (
     <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
       {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
@@ -866,10 +919,13 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
             </div>
           )}
           {isA_PartirDe && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5 text-left block">A partir de</span>}
-          <div className="flex items-end text-[#2d6a4f] dark:text-[#4ade80] font-serif text-left">
-            <span className="text-sm font-bold pb-1 mr-1">R$</span>
-            <span className="text-3xl font-bold leading-none">{formatBRL(item.price)}</span>
-            <span className="text-[10px] text-gray-400 uppercase tracking-widest pb-1 ml-2">/ {suffix}</span>
+          
+          {/* LAYOUT TIPOGRÁFICO DE PREÇO ATUALIZADO */}
+          <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif text-left mt-1">
+            <span className="text-sm font-bold mt-1 mr-1">R$</span>
+            <span className="text-4xl font-bold leading-none">{intPrice}</span>
+            <span className="text-sm font-bold mt-1">,{decPrice}</span>
+            <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-2 mb-0.5 self-end">/ {suffix}</span>
           </div>
         </div>
       </div>
@@ -878,6 +934,9 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
 };
 
 const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
+  // Corta a string do preço ao meio na vírgula para formatação customizada
+  const [intPrice, decPrice] = formatBRL(item.price).split(',');
+
   return (
     <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-8">
       {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onDelete} onEdit={onEdit} />}
@@ -904,10 +963,13 @@ const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
       
       <div className="text-center bg-gray-50 dark:bg-slate-900 py-4 rounded-xl mt-auto border-t border-black/10 dark:border-white/10 flex flex-col items-center">
         <span className="text-sm text-gray-500 uppercase tracking-widest block mb-2">Investimento</span>
-        <div className="flex items-end text-[#2d6a4f] dark:text-[#4ade80] font-serif">
-          <span className="text-sm font-bold pb-1 mr-1">R$</span>
-          <span className="text-4xl font-bold leading-none">{formatBRL(item.price)}</span>
-          <span className="text-[10px] text-gray-400 uppercase tracking-widest pb-1 ml-2">/ {item.price_unit || 'pessoa'}</span>
+        
+        {/* LAYOUT TIPOGRÁFICO DE PREÇO ATUALIZADO (Maior por ser destaque) */}
+        <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif mt-2">
+          <span className="text-base font-bold mt-1.5 mr-1">R$</span>
+          <span className="text-5xl font-bold leading-none">{intPrice}</span>
+          <span className="text-base font-bold mt-1.5">,{decPrice}</span>
+          <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-2 mb-1 self-end">/ {item.price_unit || 'pessoa'}</span>
         </div>
       </div>
     </div>
