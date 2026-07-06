@@ -10,7 +10,7 @@ const formatBRL = (value) => {
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
   about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administração, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
-  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizan mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
+  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
   cleaning: { img: "/limpeza_e_manutenção.jpg" }
 };
 
@@ -24,7 +24,6 @@ export default function App() {
   const [sections, setSections] = useState(initialSections);
   const [catalog, setCatalog] = useState([]);
 
-  // ESTADO DO MODAL DE NOTIFICAÇÃO customizado
   const [notify, setNotify] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -43,12 +42,14 @@ export default function App() {
   const [authPassword, setAuthPassword] = useState('');
 
   const [fullscreenImage, setFullscreenImage] = useState(null);
+  
+  // NOVOS ESTADOS PARA O FILTRO DUPLO
   const [selectedCategory, setSelectedCategory] = useState('Todos');
+  const [selectedSubcategory, setSelectedSubcategory] = useState('Todas');
 
   const topRef = useRef(null);
   const productsRef = useRef(null);
 
-  // Função helper para disparar a notificação na tela
   const showNotification = (type, title, message) => {
     setNotify({ isOpen: true, type, title, message });
   };
@@ -146,11 +147,35 @@ export default function App() {
     }
   };
 
+  // --- LÓGICA MELHORADA DE FILTROS ---
+  
+  // 1. Gera a lista de categorias removendo espaços extras para evitar duplicidade
   const availableCategories = useMemo(() => {
-    const cats = catalog.filter(item => item.type === 'product' && item.category).map(item => item.category);
+    const cats = catalog
+      .filter(item => item.type === 'product' && item.category)
+      .map(item => item.category.trim());
     return ['Todos', ...new Set(cats)];
   }, [catalog]);
 
+  // 2. Gera a lista de subcategorias dependendo da categoria selecionada
+  const availableSubcategories = useMemo(() => {
+    if (selectedCategory === 'Todos') return [];
+    
+    const subs = catalog
+      .filter(item => item.type === 'product' && item.category?.trim() === selectedCategory && item.subcategory)
+      .map(item => item.subcategory.trim());
+      
+    const uniqueSubs = [...new Set(subs)];
+    
+    // Oculta a barra de subcategorias se só existir 1 opção e ela tiver o mesmo nome da Categoria (Ex: Cadeiras de escritorio)
+    if (uniqueSubs.length === 1 && uniqueSubs[0] === selectedCategory) {
+      return [];
+    }
+    
+    return ['Todas', ...uniqueSubs];
+  }, [catalog, selectedCategory]);
+
+  // 3. Aplica todos os filtros (Busca + Categoria + Subcategoria)
   const filteredProducts = useMemo(() => {
     return catalog.filter(item => {
       if (item.type === 'bakery') return false; 
@@ -164,10 +189,15 @@ export default function App() {
         (item.colors || []).some(c => c.name.toLowerCase().includes(searchLower)) ||
         (item.mdfs || []).some(m => m.name.toLowerCase().includes(searchLower));
 
-      const matchesCategory = selectedCategory === 'Todos' || item.category === selectedCategory;
-      return matchesSearch && matchesCategory;
+      const itemCat = item.category?.trim();
+      const itemSub = item.subcategory?.trim();
+
+      const matchesCategory = selectedCategory === 'Todos' || itemCat === selectedCategory;
+      const matchesSubcategory = selectedSubcategory === 'Todas' || itemSub === selectedSubcategory;
+
+      return matchesSearch && matchesCategory && matchesSubcategory;
     });
-  }, [catalog, searchQuery, selectedCategory]);
+  }, [catalog, searchQuery, selectedCategory, selectedSubcategory]);
 
   const filteredBakery = useMemo(() => {
     return catalog.filter(item => {
@@ -223,7 +253,7 @@ export default function App() {
       }
     } catch (error) {
       showNotification('error', 'Falha na Autenticação', error.message);
-    } crystalline: {
+    } finally {
       setIsLoading(false);
       setAuthPassword('');
     }
@@ -305,8 +335,11 @@ export default function App() {
         price: parseFloat(formDataPayload.price) || 0,
         price_unit: formDataPayload.price_unit || (formDataPayload.type === 'bakery' ? 'pessoa' : 'unidade'),
         image_url: imageUrl,
-        category: formDataPayload.category || null,
-        subcategory: formDataPayload.subcategory || null,
+        
+        // TRIM para garantir que novos salvamentos entrem perfeitamente limpos
+        category: formDataPayload.category ? formDataPayload.category.trim() : null,
+        subcategory: formDataPayload.subcategory ? formDataPayload.subcategory.trim() : null,
+        
         dimensions: formDataPayload.dimensions || null,
         colors: processedColors,
         mdfs: processedMdfs,
@@ -417,7 +450,7 @@ export default function App() {
           </div>
         </section>
 
-        {/* PRODUTOS */}
+        {/* --- SESSÃO DE PORTFÓLIO E FILTROS ATUALIZADOS --- */}
         <section ref={productsRef} className="pt-12 relative">
           <div className="flex justify-between items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4">
             <h3 className="font-serif text-4xl text-[#192d55] dark:text-white">Portfólio de Produtos</h3>
@@ -429,22 +462,50 @@ export default function App() {
           </div>
 
           {!isLoading && catalog.some(item => item.type === 'product') && (
-            <div className="mb-10">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
-              <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x">
-                {availableCategories.map(cat => (
-                  <button key={cat} onClick={() => setSelectedCategory(cat)} className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition snap-start whitespace-nowrap ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
-                    {cat}
-                  </button>
-                ))}
+            <div className="mb-10 space-y-4">
+              
+              {/* LINHA 1: FILTRO DE CATEGORIAS */}
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
+                <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x">
+                  {availableCategories.map(cat => (
+                    <button 
+                      key={cat} 
+                      onClick={() => { 
+                        setSelectedCategory(cat); 
+                        setSelectedSubcategory('Todas'); // Reseta a subcategoria ao trocar de categoria
+                      }} 
+                      className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
               </div>
+
+              {/* LINHA 2: FILTRO DE SUBCATEGORIAS (Só aparece se houver subcategorias) */}
+              {availableSubcategories.length > 0 && (
+                <div className="animate-fade-in pl-2 border-l-2 border-gray-200 dark:border-slate-700">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar Subcategoria</span>
+                  <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none snap-x">
+                    {availableSubcategories.map(sub => (
+                      <button 
+                        key={sub} 
+                        onClick={() => setSelectedSubcategory(sub)} 
+                        className={`text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap ${selectedSubcategory === sub ? 'bg-[#192d55] text-white border-[#192d55] shadow-sm' : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             </div>
           )}
 
           {isLoading ? (
             <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando produtos...</div>
           ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado.</div>
+            <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
               {filteredProducts.map(item => (
@@ -553,13 +614,11 @@ export default function App() {
         </div>
       )}
 
-      {/* RENDERIZAÇÃO DOS MODAIS ADICIONAIS */}
       <AdminModal isOpen={isProductModalOpen} onClose={() => { setIsProductModalOpen(false); setProductToEdit(null); }} itemToEdit={productToEdit} onSave={handleSaveItem} />
       <AdminBakeryModal isOpen={isBakeryModalOpen} onClose={() => { setIsBakeryModalOpen(false); setBakeryToEdit(null); }} itemToEdit={bakeryToEdit} onSave={handleSaveItem} />
       <AdminUsersModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} profiles={profiles} onUpdateProfile={handleUpdateProfile} />
       {fullscreenImage && <ImageZoomModal src={fullscreenImage} onClose={() => setFullscreenImage(null)} />}
       
-      {/* NOVO MODAL CUSTOMIZADO DE NOTIFICAÇÃO DO SISTEMA */}
       <NotificationModal config={notify} onClose={() => setNotify(prev => ({ ...prev, isOpen: false }))} />
     </div>
   );
@@ -625,19 +684,17 @@ const NotificationModal = ({ config, onClose }) => {
 const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
   if (!isOpen) return null;
 
-  // Função para definir a cor da etiqueta de Status
   const getStatusStyle = (status) => {
     switch (status) {
       case 'aprovado':
         return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
       case 'bloqueado':
         return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
-      default: // pendente
+      default: 
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
     }
   };
 
-  // Função para definir a cor da etiqueta de Cargo
   const getRoleStyle = (role) => {
     if (role === 'admin') {
       return 'bg-[#c78c2b]/10 text-[#c78c2b] border border-[#c78c2b]/30';
@@ -648,8 +705,6 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
   return (
     <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-5xl border border-gray-200 dark:border-slate-700 max-h-[90vh] flex flex-col overflow-hidden">
-        
-        {/* Cabeçalho */}
         <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex-shrink-0">
           <div>
             <h2 className="font-serif text-2xl font-bold text-[#192d55] dark:text-white">Controle Institucional</h2>
@@ -658,8 +713,7 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
           <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-red-500 transition-colors">&times;</button>
         </div>
         
-        {/* Tabela */}
-        <div className="overflow-x-auto flex-grow custom-scrollbar p-6">
+        <div className="overflow-x-auto flex-grow p-6">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
               <tr className="border-b-2 border-gray-200 dark:border-slate-700 text-xs font-bold uppercase tracking-widest text-gray-400">
@@ -673,54 +727,22 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
               {profiles.map((p) => (
                 <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors group">
-                  <td className="py-4 px-4">
-                    <span className="font-bold text-[#192d55] dark:text-white block">{p.nome || 'Nome não informado'}</span>
-                  </td>
-                  <td className="py-4 px-4 text-gray-600 dark:text-gray-300">
-                    {p.email}
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getRoleStyle(p.cargo)}`}>
-                      {p.cargo}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(p.status)}`}>
-                      {p.status}
-                    </span>
-                  </td>
+                  <td className="py-4 px-4"><span className="font-bold text-[#192d55] dark:text-white block">{p.nome || 'Nome não informado'}</span></td>
+                  <td className="py-4 px-4 text-gray-600 dark:text-gray-300">{p.email}</td>
+                  <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getRoleStyle(p.cargo)}`}>{p.cargo}</span></td>
+                  <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(p.status)}`}>{p.status}</span></td>
                   <td className="py-4 px-4 text-right space-x-2 whitespace-nowrap">
-                    {p.status !== 'aprovado' && (
-                      <button 
-                        onClick={() => onUpdateProfile(p.id, 'status', 'aprovado')} 
-                        className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm shadow-sm transition-all inline-block"
-                      >
-                        Aprovar
-                      </button>
-                    )}
-                    {p.status !== 'bloqueado' && (
-                      <button 
-                        onClick={() => onUpdateProfile(p.id, 'status', 'bloqueado')} 
-                        className="bg-transparent border border-[#d12229] text-[#d12229] hover:bg-[#d12229] hover:text-white dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm transition-all inline-block"
-                      >
-                        Bloquear
-                      </button>
-                    )}
+                    {p.status !== 'aprovado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'aprovado')} className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm shadow-sm transition-all inline-block">Aprovar</button>}
+                    {p.status !== 'bloqueado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'bloqueado')} className="bg-transparent border border-[#d12229] text-[#d12229] hover:bg-[#d12229] hover:text-white dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm transition-all inline-block">Bloquear</button>}
                   </td>
                 </tr>
               ))}
-              
               {profiles.length === 0 && (
-                <tr>
-                  <td colSpan="5" className="py-10 text-center text-gray-500 font-serif italic">
-                    Nenhum servidor cadastrado no sistema.
-                  </td>
-                </tr>
+                <tr><td colSpan="5" className="py-10 text-center text-gray-500 font-serif italic">Nenhum servidor cadastrado no sistema.</td></tr>
               )}
             </tbody>
           </table>
         </div>
-        
       </div>
     </div>
   );
