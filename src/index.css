@@ -20,12 +20,6 @@
   }
 }
 
-.no-select {
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none;     /* IE 10 and IE 11 */
-  user-select: none;         /* Standard syntax */
-}
-
 /* Efeito Editorial de Zoom na Imagem (Suporta PC e Mobile) */
 .product-image-container {
   overflow: hidden;
