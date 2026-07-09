@@ -173,7 +173,6 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
     onSave(payload, file);
   };
 
-  // Regras de renderização condicional baseadas nas subcategorias informadas
   const isProduct = formData.type === 'product';
   const sub = formData.subcategory;
 
@@ -181,12 +180,8 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
   const needsColors = ['Cadeiras de escritorio', 'Cadeiras e mesa (conjunto aluno)'].includes(sub);
   const needsDimensions = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas', 'Blocos e Meios-fios'].includes(sub);
   
-  // Campos exclusivos do "Cadeiras e mesa (conjunto aluno)"
   const isConjuntoAluno = sub === 'Cadeiras e mesa (conjunto aluno)';
-
-  // Blocos e Meios-fios tem valor m² opcional
   const isBlocos = sub === 'Blocos e Meios-fios';
-  // Pavimentação cobra apenas por m²
   const isPavimentacao = sub === 'Pavimentação';
 
   return (
@@ -197,7 +192,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
           <h2 className="font-serif text-2xl text-[#192d55] dark:text-white font-bold">
             {itemToEdit ? 'Alterar Ativo' : 'Inserir Novo Registro'}
           </h2>
-          <button type="button" onClick={onClose} className="text-gray-400 hover:text-red-500 transition-colors text-3xl leading-none">&times;</button>
+          <button type="button" onClick={onClose} className="text-[#d12229] hover:text-red-800 transition-colors text-3xl leading-none">&times;</button>
         </div>
 
         <div className="overflow-y-auto p-6 flex-grow custom-scrollbar">
@@ -313,7 +308,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                         <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm">
                           <span className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: color.code }} />
                           <span>{color.name} {color.file || color.image_url ? '📸' : ''}</span>
-                          <button type="button" onClick={() => handleRemoveColor(index)} className="text-gray-400 font-bold ml-1 hover:text-red-600 transition-colors">&times;</button>
+                          <button type="button" onClick={() => handleRemoveColor(index)} className="text-[#d12229] font-bold ml-1 hover:text-red-800 transition-colors">&times;</button>
                         </div>
                       ))}
                     </div>
@@ -324,7 +319,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                         <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem (Opcional)</span>
                         <input type="file" accept="image/*" onChange={(e) => setNewColorFile(e.target.files[0])} className="text-xs" />
                       </div>
-                      <button type="button" onClick={handleAddColor} className="bg-gray-800 dark:bg-slate-700 text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider hover:bg-gray-900 transition-colors">Adicionar</button>
+                      <button type="button" onClick={handleAddColor} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors">Adicionar</button>
                     </div>
                   </div>
                 )}
@@ -336,7 +331,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                       {formData.mdfs.map((mdf, index) => (
                         <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm font-bold uppercase text-[10px]">
                           <span>{mdf.name} {mdf.file || mdf.image_url ? '📸' : ''}</span>
-                          <button type="button" onClick={() => handleRemoveMdf(index)} className="text-gray-400 text-sm ml-1 hover:text-red-600 transition-colors">&times;</button>
+                          <button type="button" onClick={() => handleRemoveMdf(index)} className="text-[#d12229] font-bold text-sm ml-1 hover:text-red-800 transition-colors">&times;</button>
                         </div>
                       ))}
                     </div>
@@ -346,7 +341,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                         <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem (Opcional)</span>
                         <input type="file" accept="image/*" onChange={(e) => setNewMdfFile(e.target.files[0])} className="text-xs" />
                       </div>
-                      <button type="button" onClick={handleAddMdf} className="bg-gray-800 dark:bg-slate-700 text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider hover:bg-gray-900 transition-colors whitespace-nowrap">Adicionar</button>
+                      <button type="button" onClick={handleAddMdf} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors whitespace-nowrap">Adicionar</button>
                     </div>
                   </div>
                 )}
@@ -358,8 +353,8 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
         </div>
 
         <div className="flex gap-4 p-6 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex-shrink-0 justify-end">
-          <button type="button" onClick={onClose} className="px-6 py-3 text-sm uppercase tracking-widest text-gray-600 dark:text-gray-400 font-bold hover:text-gray-900 dark:hover:text-white transition-colors">Cancelar</button>
-          <button type="submit" form="admin-form" className="px-8 py-3 text-sm uppercase tracking-widest bg-[#192d55] text-white font-bold rounded-sm shadow-md hover:bg-[#192d55]/90 transition-colors">
+          <button type="button" onClick={onClose} className="px-6 py-3 text-sm uppercase tracking-widest text-[#d12229] font-bold hover:underline transition-colors">Cancelar</button>
+          <button type="submit" form="admin-form" className="px-8 py-3 text-sm uppercase tracking-widest bg-[#2d6a4f] text-white font-bold rounded-sm shadow-md hover:bg-[#1b4332] transition-colors">
             Validar e Salvar
           </button>
         </div>
