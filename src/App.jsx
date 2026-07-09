@@ -475,13 +475,13 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-12 space-y-32">
         <section className="relative pt-12 pb-24 text-center border-b border-gray-200 dark:border-slate-700">
-          <h2 className="font-serif text-5xl md:text-7xl font-bold tracking-tight text-[#192d55] dark:text-white mb-6">{sections.hero.title}</h2>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-6">{sections.hero.title}</h2>
           <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">{sections.hero.subtitle}</p>
         </section>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
           <div className="order-2 md:order-1">
-            <h3 className="font-serif text-3xl md:text-4xl text-[#d12229] mb-8">Quem somos nós</h3>
+            <h3 className="font-serif text-4xl md:text-5xl font-black text-[#d12229] mb-8">Quem somos nós</h3>
             <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">{sections.about.text}</p>
           </div>
           <div className="order-1 md:order-2 flex justify-center">
@@ -497,7 +497,7 @@ export default function App() {
             <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" />
           </div>
           <div>
-            <h3 className="font-serif text-3xl md:text-4xl text-[#c78c2b] mb-8">Trabalho com Dignidade</h3>
+            <h3 className="font-serif text-4xl md:text-5xl font-black text-[#c78c2b] mb-8">Trabalho com Dignidade</h3>
             <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">{sections.dignity.text}</p>
           </div>
         </section>
