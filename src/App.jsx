@@ -481,7 +481,7 @@ export default function App() {
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
           <div className="order-2 md:order-1">
-            <h3 className="font-serif text-4xl md:text-5xl font-black text-[#d12229] mb-8">Quem somos nós</h3>
+            <h3 className="font-serif text-4xl md:text-5xl font-semibold text-[#d12229] mb-8">Quem somos nós</h3>
             <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">{sections.about.text}</p>
           </div>
           <div className="order-1 md:order-2 flex justify-center">
@@ -497,14 +497,14 @@ export default function App() {
             <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" />
           </div>
           <div>
-            <h3 className="font-serif text-4xl md:text-5xl font-black text-[#c78c2b] mb-8">Trabalho com Dignidade</h3>
+            <h3 className="font-serif text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-8">Trabalho com Dignidade</h3>
             <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">{sections.dignity.text}</p>
           </div>
         </section>
 
         <section ref={productsRef} className="pt-12 relative pb-16">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
-            <h3 className="font-serif text-4xl text-[#192d55] dark:text-white">Portfólio de Produtos e Serviços</h3>
+            <h3 className="font-serif text-4xl md:text-5xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
             {isAdmin && (
               <div className="flex gap-2">
                 <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
