@@ -920,70 +920,115 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   let suffix = 'unid.';
   if (item.subcategory === 'Pavimentação') suffix = 'm²';
 
-  // Corta a string do preço ao meio na vírgula para formatação customizada
   const [intPrice, decPrice] = formatBRL(item.price).split(',');
 
   return (
-    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
+    <div className="group flex flex-col relative bg-[#222222] dark:bg-[#1c1c1e] rounded-[2rem] p-3 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 border border-gray-800">
+      {/* Botões de Admin (Posicionados no topo à direita do card) */}
       {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
       
-      <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative cursor-pointer" onClick={() => onImageClick(currentImage)}>
-        <img src={currentImage} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+      {/* Box da Imagem (Fundo claro e arredondado internamente) */}
+      <div 
+        className="w-full aspect-[4/3] bg-[#f5f5f5] rounded-[1.5rem] overflow-hidden relative cursor-pointer mb-5" 
+        onClick={() => onImageClick(currentImage)}
+      >
+        <img 
+          src={currentImage} 
+          alt={item.title} 
+          /* mix-blend-multiply ajuda imagens JPG com fundo branco a se mesclarem perfeitamente com o fundo cinza claro */
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 mix-blend-multiply" 
+          loading="lazy" 
+        />
+        
+        {/* Ícone de coração idêntico à imagem de referência (Apenas visual / Favoritar futuramente) */}
+        <button 
+          onClick={(e) => { e.stopPropagation(); /* Adicione lógica de favorito se quiser no futuro */ }}
+          className="absolute top-4 right-4 w-10 h-10 bg-black/80 hover:bg-black rounded-full flex items-center justify-center transition-colors"
+        >
+          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+          </svg>
+        </button>
       </div>
       
-      <div className="p-6 flex-grow flex flex-col justify-between">
-        <div>
-          {hasVariations && (
-            <div className="flex gap-2 mb-4 flex-wrap items-center">
-              {item.image_url || item.image ? (
-                <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-6 h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300 dark:border-slate-600'}`}>
-                  <img src={defaultImage} alt="Principal" className="w-full h-full object-cover" />
-                </button>
-              ) : null}
-              {item.image_url || item.image ? <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div> : null}
+      <div className="px-2 pb-1 flex flex-col flex-grow">
+        
+        {/* Variações de Cor e MDF adaptadas para o modo escuro */}
+        {hasVariations && (
+          <div className="flex gap-2 mb-4 flex-wrap items-center">
+            {item.image_url || item.image ? (
+              <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-6 h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-white border-transparent' : 'border-white/20'}`}>
+                <img src={defaultImage} alt="Principal" className="w-full h-full object-cover" />
+              </button>
+            ) : null}
+            {item.image_url || item.image ? <div className="w-px h-4 bg-white/20 mx-1"></div> : null}
 
-              {item.colors?.map(c => (
-                <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-5 h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} style={{ backgroundColor: c.code }} />
-              ))}
-              {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div>}
-              {item.mdfs?.map(m => (
-                <button key={m.name} title={m.name} onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b]' : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-200 dark:hover:bg-slate-600'}`}>{m.name}</button>
-              ))}
-            </div>
-          )}
-          
-          <h4 className="font-serif text-xl font-bold text-gray-900 dark:text-white mb-3 leading-tight">{item.title}</h4>
-          
-          {featureList.length > 0 && (
-             <ul className="text-sm text-gray-600 dark:text-gray-400 font-light mb-4 space-y-1 list-disc list-inside marker:text-[#c78c2b]">
-               {featureList.map((f, i) => <li key={i}>{f}</li>)}
-             </ul>
-          )}
-
-          <div className="space-y-1 mb-6 text-xs text-gray-500 uppercase tracking-widest">
-            {item.specification && <p><span className="font-bold text-gray-700 dark:text-gray-300">Especificação:</span> {item.specification}</p>}
-            {item.fnde_standard && <p className="text-[#2d6a4f] dark:text-[#4ade80] font-bold">Padrão FNDE ✓</p>}
-            {item.dimensions && <p><span className="font-bold text-gray-700 dark:text-gray-300">Dimensões:</span> {item.dimensions}</p>}
-            {item.size && <p><span className="font-bold text-gray-700 dark:text-gray-300">Tamanho:</span> {item.size}</p>}
+            {item.colors?.map(c => (
+              <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-5 h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-white border-transparent' : 'border-white/20'}`} style={{ backgroundColor: c.code }} />
+            ))}
+            {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-4 bg-white/20 mx-1"></div>}
+            {item.mdfs?.map(m => (
+              <button key={m.name} title={m.name} onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-white text-black border-white' : 'bg-white/10 text-gray-300 border-white/20 hover:bg-white/20'}`}>{m.name}</button>
+            ))}
           </div>
+        )}
+        
+        {/* Título e Subtítulo (Substituído a fonte Serif por Sans-serif para ficar mais moderno) */}
+        <div className="mb-4">
+          <h4 className="font-sans text-xl font-bold text-white mb-1 leading-tight">{item.title}</h4>
+          <p className="text-sm text-gray-400 font-medium">{item.subcategory || item.category || 'Geral'}</p>
         </div>
         
-        <div className="flex flex-col items-start mt-auto pt-4 border-t border-gray-100 dark:border-slate-700">
-          {item.m2_price && (
-            <div className="mb-2 w-full flex justify-between items-center text-xs text-gray-500 uppercase tracking-widest border-b border-dashed border-gray-200 dark:border-slate-600 pb-2">
-              <span>Valor do m²</span>
-              <span className="font-bold text-gray-700 dark:text-gray-300">R$ {formatBRL(item.m2_price)}</span>
-            </div>
-          )}
-          {isA_PartirDe && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5 text-left block">A partir de</span>}
-          
-          {/* LAYOUT TIPOGRÁFICO DE PREÇO ATUALIZADO */}
-          <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif text-left mt-1">
-            <span className="text-sm font-bold mt-1 mr-1">R$</span>
-            <span className="text-4xl font-bold leading-none">{intPrice}</span>
-            <span className="text-sm font-bold mt-1">,{decPrice}</span>
-            <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-2 mb-0.5 self-end">/ {suffix}</span>
+        {/* Lista de Features e Specs (Tornados mais sutis para não poluir o design) */}
+        {(featureList.length > 0 || item.specification || item.dimensions || item.fnde_standard) && (
+          <div className="mb-6 space-y-2 text-xs text-gray-400 font-light flex-grow">
+             {featureList.length > 0 && (
+                <ul className="list-disc list-inside space-y-1">
+                  {/* Mostra apenas os 3 primeiros para não alongar muito o card. O resto pode ser visto clicando ou editando */}
+                  {featureList.slice(0, 3).map((f, i) => <li key={i} className="truncate">{f}</li>)}
+                  {featureList.length > 3 && <li>+ {featureList.length - 3} detalhes</li>}
+                </ul>
+             )}
+             
+             {(item.specification || item.dimensions || item.fnde_standard) && (
+                <div className="border-t border-white/10 pt-2 mt-2 space-y-1">
+                  {item.fnde_standard && <p className="text-emerald-400 font-semibold">Padrão FNDE ✓</p>}
+                  {item.specification && <p className="truncate"><span className="font-medium text-gray-300">Esp:</span> {item.specification}</p>}
+                  {item.dimensions && <p className="truncate"><span className="font-medium text-gray-300">Dim:</span> {item.dimensions}</p>}
+                </div>
+             )}
           </div>
+        )}
+
+        {/* Rodapé: Preço + Botão Bolsa (Shopping Bag) */}
+        <div className="flex justify-between items-end mt-auto pt-4">
+          <div>
+            {item.m2_price && (
+              <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">
+                Valor m²: R$ {formatBRL(item.m2_price)}
+              </span>
+            )}
+            {isA_PartirDe && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">A partir de</span>}
+            
+            <div className="flex items-start text-white font-sans">
+              <span className="text-sm font-bold mt-1.5 mr-1">R$</span>
+              <span className="text-3xl font-bold tracking-tight">{intPrice}</span>
+              <span className="text-sm font-bold mt-1.5">,{decPrice}</span>
+              {/* Ocultando o /unid para ficar mais clean igual a imagem, descomente a linha abaixo se quiser manter */}
+              {/* <span className="text-xs text-gray-500 ml-1 mb-1.5 self-end">/{suffix}</span> */}
+            </div>
+          </div>
+          
+          {/* Botão de ação imitando o botão de "bolsa" da imagem de referência */}
+          <button 
+            onClick={() => onImageClick(currentImage)}
+            title="Ver Imagem"
+            className="w-14 h-14 bg-[#f5f5f5] rounded-[1.25rem] flex items-center justify-center hover:bg-white transition-colors flex-shrink-0"
+          >
+            <svg className="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </button>
         </div>
       </div>
     </div>
