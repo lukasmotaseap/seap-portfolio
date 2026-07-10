@@ -473,7 +473,7 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 space-y-32">
+      <main className="max-w-7xl mx-auto px-6 py-12 space-y-20">
         <section className="relative pt-12 pb-24 text-center border-b border-gray-200 dark:border-slate-700">
           <h2 className="font-serif text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-6">{sections.hero.title}</h2>
           <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">{sections.hero.subtitle}</p>
