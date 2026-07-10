@@ -58,7 +58,7 @@ const formatBRL = (value) => {
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
   about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administração, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
-  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
+  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial of cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
   cleaning: { img: "/limpeza_e_manutenção.jpg" }
 };
 
@@ -94,13 +94,11 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState('Todas');
   
-  // NOVO: Estado para a exclusão de produto
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const topRef = useRef(null);
   const productsRef = useRef(null);
 
-  // Instanciando os hooks de Scroll e Arrastar para os filtros
   const categoryScrollRef = useDraggableScroll();
   const subcategoryScrollRef = useDraggableScroll();
 
@@ -313,12 +311,10 @@ export default function App() {
     showNotification('success', 'Desconectado', 'Sua sessão foi encerrada com segurança.');
   };
 
-  // NOVO: Função para disparar o modal de confirmação de exclusão
   const handleDeleteItem = (id) => {
     setItemToDelete(id);
   };
 
-  // NOVO: Função que de fato exclui o item após confirmação
   const confirmDelete = async () => {
     if (!itemToDelete) return;
     try {
@@ -473,38 +469,43 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 space-y-20">
-        <section className="relative pt-12 pb-24 text-center border-b border-gray-200 dark:border-slate-700">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-6">{sections.hero.title}</h2>
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">{sections.hero.subtitle}</p>
+      {/* Ajuste 1: space-y-12 reduzido (era space-y-20) para aproximar as seções */}
+      <main className="max-w-7xl mx-auto px-6 py-8 space-y-12">
+        
+        {/* Ajuste 2: Seção Hero mais compacta com paddings e margens reduzidas */}
+        <section className="relative pt-6 pb-12 text-center border-b border-gray-200 dark:border-slate-700">
+          <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4">{sections.hero.title}</h2>
+          <p className="max-w-2xl mx-auto text-base md:text-lg text-gray-600 dark:text-gray-400 font-light leading-relaxed">{sections.hero.subtitle}</p>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
+        {/* Ajuste 3: Quem somos nós mais compacto (gap reduzido de 16 para 8, margem do título e leading menores) */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative">
           <div className="order-2 md:order-1">
-            <h3 className="font-serif text-4xl md:text-5xl font-semibold text-[#d12229] mb-8">Quem somos nós</h3>
-            <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">{sections.about.text}</p>
+            <h3 className="font-serif text-3xl md:text-4xl font-semibold text-[#d12229] mb-4">Quem somos nós</h3>
+            <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300 font-light">{sections.about.text}</p>
           </div>
           <div className="order-1 md:order-2 flex justify-center">
-            <div className="aspect-[540/716] w-full max-w-[300px]">
+            <div className="aspect-[540/716] w-full max-w-[240px]">
               <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
             </div>
           </div>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
-          <div className="aspect-[1956/1505] overflow-hidden">
+        {/* Ajuste 4: Trabalho com Dignidade mais compacto (gap reduzido de 16 para 8, margem do título e leading menores) */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative">
+          <div className="aspect-[1956/1505] overflow-hidden max-w-lg mx-auto md:max-w-none">
             <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-md" />
             <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" />
           </div>
           <div>
-            <h3 className="font-serif text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-8">Trabalho com Dignidade</h3>
-            <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">{sections.dignity.text}</p>
+            <h3 className="font-serif text-3xl md:text-4xl font-semibold text-[#c78c2b] mb-4">Trabalho com Dignidade</h3>
+            <p className="text-base leading-relaxed text-gray-700 dark:text-gray-300 font-light">{sections.dignity.text}</p>
           </div>
         </section>
 
-        <section ref={productsRef} className="pt-12 relative pb-16">
+        <section ref={productsRef} className="pt-6 relative pb-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
-            <h3 className="font-serif text-4xl md:text-5xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
+            <h3 className="font-serif text-3xl md:text-4xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
             {isAdmin && (
               <div className="flex gap-2">
                 <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
@@ -562,7 +563,8 @@ export default function App() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            /* Ajuste 5: Grid alterado para grid-cols-2 no celular com gap-3 (mantendo as colunas maiores no desktop) */
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-12">
               {filteredProducts.map(item => (
                 item.type === 'bakery' ? (
                   <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
@@ -575,7 +577,7 @@ export default function App() {
         </section>
       </main>
 
-      <section className="relative mt-8">
+      <section className="relative mt-4">
          <div className="w-full aspect-[1749/1241] bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
             {sections.cleaning.img ? (
               <img src={sections.cleaning.img} alt="Limpeza" className="w-full h-full object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen" />
@@ -583,8 +585,8 @@ export default function App() {
          </div>
       </section>
 
-      <footer className="bg-[#0f172a] text-white pt-20 pb-10 border-t-4 border-[#c78c2b]">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+      <footer className="bg-[#0f172a] text-white pt-16 pb-8 border-t-4 border-[#c78c2b]">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="col-span-1">
              <div className="w-16 h-16 flex items-center justify-center mb-6"><img src="/seap_logo.png" alt="SEAP" /></div>
              <p className="text-sm opacity-70 font-light leading-relaxed">Secretaria de Administração Penitenciária</p>
@@ -704,7 +706,6 @@ const NotificationModal = ({ config, onClose }) => {
   );
 };
 
-// NOVO: Componente do Modal de Confirmação de Exclusão
 const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
 
@@ -890,6 +891,7 @@ const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
   </div>
 );
 
+{/* Ajuste 6: Versão final do ProductCard (fundo cinza, texto preto, sem corações ou bolsas) */}
 const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   const defaultImage = useMemo(() => {
     if (item.image_url || item.image) return item.image_url || item.image;
@@ -917,118 +919,92 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
     'Cadeiras de escritorio', 'Cadeiras e mesa (conjunto aluno)'
   ].includes(item.subcategory);
 
-  let suffix = 'unid.';
-  if (item.subcategory === 'Pavimentação') suffix = 'm²';
-
   const [intPrice, decPrice] = formatBRL(item.price).split(',');
 
   return (
-    <div className="group flex flex-col relative bg-[#222222] dark:bg-[#1c1c1e] rounded-[2rem] p-3 hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 border border-gray-800">
-      {/* Botões de Admin (Posicionados no topo à direita do card) */}
+    <div className="group flex flex-col relative bg-gray-100 dark:bg-[#1c1c1e] text-gray-900 dark:text-white rounded-[1.5rem] p-3 hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-800">
+      {/* Botões de Admin integrados de forma discreta */}
       {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
       
-      {/* Box da Imagem (Fundo claro e arredondado internamente) */}
+      {/* Container da Imagem com fundo levemente contrastante */}
       <div 
-        className="w-full aspect-[4/3] bg-[#f5f5f5] rounded-[1.5rem] overflow-hidden relative cursor-pointer mb-5" 
+        className="w-full aspect-[4/3] bg-white dark:bg-[#2a2a2c] rounded-[1.2rem] overflow-hidden relative cursor-pointer mb-4" 
         onClick={() => onImageClick(currentImage)}
       >
         <img 
           src={currentImage} 
           alt={item.title} 
-          /* mix-blend-multiply ajuda imagens JPG com fundo branco a se mesclarem perfeitamente com o fundo cinza claro */
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 mix-blend-multiply" 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 mix-blend-multiply dark:mix-blend-normal" 
           loading="lazy" 
         />
-        
-        {/* Ícone de coração idêntico à imagem de referência (Apenas visual / Favoritar futuramente) */}
-        <button 
-          onClick={(e) => { e.stopPropagation(); /* Adicione lógica de favorito se quiser no futuro */ }}
-          className="absolute top-4 right-4 w-10 h-10 bg-black/80 hover:bg-black rounded-full flex items-center justify-center transition-colors"
-        >
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-          </svg>
-        </button>
+        {/* ÍCONE DE CORAÇÃO REMOVIDO CONFORME AJUSTE 6 */}
       </div>
       
-      <div className="px-2 pb-1 flex flex-col flex-grow">
+      <div className="px-1 pb-1 flex flex-col flex-grow">
         
-        {/* Variações de Cor e MDF adaptadas para o modo escuro */}
+        {/* Variações de Amostras adaptadas para o fundo cinza */}
         {hasVariations && (
-          <div className="flex gap-2 mb-4 flex-wrap items-center">
+          <div className="flex gap-1.5 mb-3 flex-wrap items-center">
             {item.image_url || item.image ? (
-              <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-6 h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-white border-transparent' : 'border-white/20'}`}>
+              <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-5 h-5 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-[#192d55] dark:ring-white border-transparent' : 'border-gray-400/50'}`}>
                 <img src={defaultImage} alt="Principal" className="w-full h-full object-cover" />
               </button>
             ) : null}
-            {item.image_url || item.image ? <div className="w-px h-4 bg-white/20 mx-1"></div> : null}
+            {item.image_url || item.image ? <div className="w-px h-3 bg-gray-300 dark:bg-white/20 mx-0.5"></div> : null}
 
             {item.colors?.map(c => (
-              <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-5 h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-white border-transparent' : 'border-white/20'}`} style={{ backgroundColor: c.code }} />
+              <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-4 h-4 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-[#192d55] dark:ring-white border-transparent' : 'border-gray-400/50'}`} style={{ backgroundColor: c.code }} />
             ))}
-            {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-4 bg-white/20 mx-1"></div>}
+            {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-3 bg-gray-300 dark:bg-white/20 mx-0.5"></div>}
             {item.mdfs?.map(m => (
-              <button key={m.name} title={m.name} onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-white text-black border-white' : 'bg-white/10 text-gray-300 border-white/20 hover:bg-white/20'}`}>{m.name}</button>
+              <button key={m.name} title={m.name} onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} className={`px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-gray-800 text-white border-gray-800 dark:bg-white dark:text-black dark:border-white' : 'bg-gray-200/60 text-gray-700 border-gray-300 dark:bg-white/10 dark:text-gray-300 dark:border-white/20 hover:bg-gray-300'}`}>{m.name}</button>
             ))}
           </div>
         )}
         
-        {/* Título e Subtítulo (Substituído a fonte Serif por Sans-serif para ficar mais moderno) */}
-        <div className="mb-4">
-          <h4 className="font-sans text-xl font-bold text-white mb-1 leading-tight">{item.title}</h4>
-          <p className="text-sm text-gray-400 font-medium">{item.subcategory || item.category || 'Geral'}</p>
+        {/* Título e Subtítulo */}
+        <div className="mb-3">
+          <h4 className="font-sans text-base md:text-lg font-bold text-gray-900 dark:text-white mb-0.5 leading-tight truncate">{item.title}</h4>
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-medium truncate">{item.subcategory || item.category || 'Geral'}</p>
         </div>
         
-        {/* Lista de Features e Specs (Tornados mais sutis para não poluir o design) */}
+        {/* Atributos / Descrição compacta */}
         {(featureList.length > 0 || item.specification || item.dimensions || item.fnde_standard) && (
-          <div className="mb-6 space-y-2 text-xs text-gray-400 font-light flex-grow">
+          <div className="mb-4 space-y-1.5 text-[11px] text-gray-600 dark:text-gray-400 font-light flex-grow">
              {featureList.length > 0 && (
-                <ul className="list-disc list-inside space-y-1">
-                  {/* Mostra apenas os 3 primeiros para não alongar muito o card. O resto pode ser visto clicando ou editando */}
-                  {featureList.slice(0, 3).map((f, i) => <li key={i} className="truncate">{f}</li>)}
-                  {featureList.length > 3 && <li>+ {featureList.length - 3} detalhes</li>}
+                <ul className="list-disc list-inside space-y-0.5">
+                  {featureList.slice(0, 2).map((f, i) => <li key={i} className="truncate">{f}</li>)}
+                  {featureList.length > 2 && <li className="opacity-70">+ {featureList.length - 2} especificações</li>}
                 </ul>
              )}
              
              {(item.specification || item.dimensions || item.fnde_standard) && (
-                <div className="border-t border-white/10 pt-2 mt-2 space-y-1">
-                  {item.fnde_standard && <p className="text-emerald-400 font-semibold">Padrão FNDE ✓</p>}
-                  {item.specification && <p className="truncate"><span className="font-medium text-gray-300">Esp:</span> {item.specification}</p>}
-                  {item.dimensions && <p className="truncate"><span className="font-medium text-gray-300">Dim:</span> {item.dimensions}</p>}
+                <div className="border-t border-gray-300/60 dark:border-white/10 pt-1.5 mt-1.5 space-y-0.5">
+                  {item.fnde_standard && <p className="text-emerald-700 dark:text-emerald-400 font-semibold">Padrão FNDE ✓</p>}
+                  {item.specification && <p className="truncate"><span className="font-medium text-gray-700 dark:text-gray-300">Esp:</span> {item.specification}</p>}
+                  {item.dimensions && <p className="truncate"><span className="font-medium text-gray-700 dark:text-gray-300">Dim:</span> {item.dimensions}</p>}
                 </div>
              )}
           </div>
         )}
 
-        {/* Rodapé: Preço + Botão Bolsa (Shopping Bag) */}
-        <div className="flex justify-between items-end mt-auto pt-4">
+        {/* Rodapé Dinâmico: Alinhamento de Preço sem a Bolsa lateral */}
+        <div className="flex justify-between items-end mt-auto pt-3 border-t border-gray-200 dark:border-white/5">
           <div>
             {item.m2_price && (
-              <span className="text-[10px] text-gray-500 uppercase tracking-widest block mb-1">
-                Valor m²: R$ {formatBRL(item.m2_price)}
+              <span className="text-[9px] text-gray-500 dark:text-gray-400 uppercase tracking-widest block mb-0.5">
+                M²: R$ {formatBRL(item.m2_price)}
               </span>
             )}
-            {isA_PartirDe && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-1">A partir de</span>}
+            {isA_PartirDe && <span className="text-[9px] font-bold uppercase tracking-widest text-gray-400 dark:text-gray-500 block mb-0.5">A partir de</span>}
             
-            <div className="flex items-start text-white font-sans">
-              <span className="text-sm font-bold mt-1.5 mr-1">R$</span>
-              <span className="text-3xl font-bold tracking-tight">{intPrice}</span>
-              <span className="text-sm font-bold mt-1.5">,{decPrice}</span>
-              {/* Ocultando o /unid para ficar mais clean igual a imagem, descomente a linha abaixo se quiser manter */}
-              {/* <span className="text-xs text-gray-500 ml-1 mb-1.5 self-end">/{suffix}</span> */}
+            <div className="flex items-start text-gray-900 dark:text-white font-sans">
+              <span className="text-xs font-bold mt-1 mr-0.5">R$</span>
+              <span className="text-xl md:text-2xl font-bold tracking-tight">{intPrice}</span>
+              <span className="text-xs font-bold mt-1">,{decPrice}</span>
             </div>
           </div>
-          
-          {/* Botão de ação imitando o botão de "bolsa" da imagem de referência */}
-          <button 
-            onClick={() => onImageClick(currentImage)}
-            title="Ver Imagem"
-            className="w-14 h-14 bg-[#f5f5f5] rounded-[1.25rem] flex items-center justify-center hover:bg-white transition-colors flex-shrink-0"
-          >
-            <svg className="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
-          </button>
+          {/* BOTÃO DA BOLSA REMOVIDO CONFORME AJUSTE 6 */}
         </div>
       </div>
     </div>
@@ -1036,42 +1012,40 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
 };
 
 const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
-  // Corta a string do preço ao meio na vírgula para formatação customizada
   const [intPrice, decPrice] = formatBRL(item.price).split(',');
 
   return (
-    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-8">
+    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl overflow-hidden hover:shadow-lg transition-shadow duration-300 p-6">
       {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onDelete} onEdit={onEdit} />}
-      <div className="text-center mb-8 border-b border-gray-100 dark:border-slate-700 pb-6">
-         <span className="text-[#c78c2b] text-xs font-bold uppercase tracking-widest block mb-2">Serviço de Padaria</span>
-         <h4 className="font-serif text-2xl font-bold text-gray-900 dark:text-white leading-tight">{item.title}</h4>
-         {item.description && <p className="text-sm text-gray-500 mt-3 font-light italic">"{item.description}"</p>}
+      <div className="text-center mb-6 border-b border-gray-100 dark:border-slate-700 pb-4">
+         <span className="text-[#c78c2b] text-[10px] font-bold uppercase tracking-widest block mb-1">Serviço de Padaria</span>
+         <h4 className="font-serif text-xl font-bold text-gray-900 dark:text-white leading-tight truncate">{item.title}</h4>
+         {item.description && <p className="text-xs text-gray-500 mt-2 font-light italic truncate">"{item.description}"</p>}
       </div>
       
-      <div className="grid grid-cols-2 gap-6 flex-grow mb-8 text-sm text-gray-700 dark:text-gray-300 font-light">
+      <div className="grid grid-cols-2 gap-4 flex-grow mb-6 text-xs text-gray-700 dark:text-gray-300 font-light">
         <div>
-          <h5 className="font-bold text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Comestíveis</h5>
-          <ul className="space-y-2 list-disc list-inside marker:text-[#c78c2b]">
-            {(item.foods || []).map((f, i) => <li key={i}>{f}</li>)}
+          <h5 className="font-bold text-[10px] uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 border-b border-gray-100 dark:border-slate-700 pb-1">Comestíveis</h5>
+          <ul className="space-y-1 list-disc list-inside marker:text-[#c78c2b]">
+            {(item.foods || []).slice(0, 4).map((f, i) => <li key={i} className="truncate">{f}</li>)}
+            {item.foods?.length > 4 && <li className="list-none opacity-60 text-[10px]">+ {item.foods.length - 4} itens</li>}
           </ul>
         </div>
         <div>
-          <h5 className="font-bold text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Bebidas</h5>
-          <ul className="space-y-2 list-disc list-inside marker:text-[#d12229]">
-            {(item.drinks || []).map((d, i) => <li key={i}>{d}</li>)}
+          <h5 className="font-bold text-[10px] uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 border-b border-gray-100 dark:border-slate-700 pb-1">Bebidas</h5>
+          <ul className="space-y-1 list-disc list-inside marker:text-[#d12229]">
+            {(item.drinks || []).slice(0, 4).map((d, i) => <li key={i} className="truncate">{d}</li>)}
+            {item.drinks?.length > 4 && <li className="list-none opacity-60 text-[10px]">+ {item.drinks.length - 4} itens</li>}
           </ul>
         </div>
       </div>
       
-      <div className="text-center bg-gray-50 dark:bg-slate-900 py-4 rounded-xl mt-auto border-t border-black/10 dark:border-white/10 flex flex-col items-center">
-        <span className="text-sm text-gray-500 uppercase tracking-widest block mb-2">Investimento</span>
-        
-        {/* LAYOUT TIPOGRÁFICO DE PREÇO ATUALIZADO (Maior por ser destaque) */}
-        <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif mt-2">
-          <span className="text-base font-bold mt-1.5 mr-1">R$</span>
-          <span className="text-5xl font-bold leading-none">{intPrice}</span>
-          <span className="text-base font-bold mt-1.5">,{decPrice}</span>
-          <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-2 mb-1 self-end">/ {item.price_unit || 'pessoa'}</span>
+      <div className="text-center bg-gray-50 dark:bg-slate-900 py-3 rounded-lg mt-auto border-t border-black/5 dark:border-white/5 flex flex-col items-center">
+        <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif">
+          <span className="text-xs font-bold mt-1 mr-0.5">R$</span>
+          <span className="text-3xl font-bold leading-none">{intPrice}</span>
+          <span className="text-xs font-bold mt-1">,{decPrice}</span>
+          <span className="text-[9px] text-gray-400 uppercase tracking-widest ml-1.5 mb-0.5 self-end">/ {item.price_unit || 'pess.'}</span>
         </div>
       </div>
     </div>
