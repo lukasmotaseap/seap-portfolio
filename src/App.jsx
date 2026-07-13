@@ -562,7 +562,7 @@ export default function App() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-12">
               {filteredProducts.map(item => (
                 item.type === 'bakery' ? (
                   <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
@@ -884,9 +884,9 @@ const ImageZoomModal = ({ src, onClose }) => {
 };
 
 const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
-  <div className={`absolute ${isCard ? 'top-2 right-2' : 'top-0 right-0'} z-10 flex gap-1`}>
-    <button onClick={onEdit} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition">[Editar]</button>
-    {isCard && <button onClick={onDelete} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition">Excluir</button>}
+  <div className={`absolute ${isCard ? 'top-2 right-2' : 'top-0 right-0'} z-10 flex gap-2`}>
+    <button onClick={onEdit} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition border border-[#192d55] rounded-xl">Editar</button>
+    {isCard && <button onClick={onDelete} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition border border-[#192d55] rounded-xl">Excluir</button>}
   </div>
 );
 
