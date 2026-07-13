@@ -433,27 +433,42 @@ export default function App() {
       <div ref={topRef}></div>
       
       <nav className="sticky top-0 z-50 bg-[#192d55] text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-          <button onClick={() => topRef.current?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-wrap md:flex-nowrap items-center justify-between gap-3 md:gap-4">
+          
+          {/* 1. LOGO E TEXTO */}
+          <button onClick={() => topRef.current?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity order-1 shrink-0">
             <div className="w-10 h-10 rounded-sm flex items-center justify-center">
               <img src="/seap_logo.png" alt="SEAP Logo" />
             </div>
-            <div>
+            {/* Esconde os textos no mobile e mostra a partir de telas médias */}
+            <div className="hidden md:block">
               <h1 className="font-serif font-bold text-lg leading-tight uppercase tracking-widest">CATÁLOGO</h1>
               <p className="text-[10px] tracking-widest opacity-80 uppercase">SEAP</p>
             </div>
           </button>
 
-          <div className="w-full md:w-1/3">
-            <input type="text" placeholder="Pesquisar produtos e serviços..." value={searchQuery} onChange={handleSearch} className="w-full px-4 py-2 text-sm text-gray-900 rounded-sm border-none focus:ring-2 focus:ring-[#c78c2b] outline-none" />
+          {/* 2. BARRA DE PESQUISA */}
+          <div className="flex-1 min-w-0 md:w-1/3 order-2">
+            <input 
+              type="text" 
+              placeholder="Pesquisar produtos e serviços..." 
+              value={searchQuery} 
+              onChange={handleSearch} 
+              className="w-full px-4 py-2 text-sm text-gray-900 rounded-sm border-none focus:ring-2 focus:ring-[#c78c2b] outline-none" 
+            />
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* 3. BOTÃO DE TEMA (Lado direito da barra de pesquisa no mobile) */}
+          <div className="order-3 shrink-0">
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/10 rounded-sm transition">
               {darkMode ? '☀️' : '🌙'}
             </button>
+          </div>
+
+          {/* 4. BOTÃO SERVIDOR E ADMIN (Linha de baixo centralizada no mobile) */}
+          <div className="w-full md:w-auto flex items-center justify-center gap-4 order-4 md:order-none mt-2 md:mt-0">
             {isAdmin ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 flex-wrap justify-center">
                 {userRole === 'admin' && (
                   <button onClick={() => setIsUserModalOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5 rounded-sm uppercase tracking-wider transition">
                     Gerir Servidores
@@ -470,6 +485,7 @@ export default function App() {
               </button>
             )}
           </div>
+
         </div>
       </nav>
 
