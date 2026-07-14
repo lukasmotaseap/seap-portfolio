@@ -11,7 +11,6 @@ function useDraggableScroll() {
     const slider = ref.current;
     if (!slider) return;
 
-    // A lógica de arraste só será ativa se a tela for pequena
     const isMobile = window.innerWidth < 768;
     if (!isMobile) return;
 
@@ -94,13 +93,11 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState('Todas');
   
-  // NOVO: Estado para a exclusão de produto
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const topRef = useRef(null);
   const productsRef = useRef(null);
 
-  // Instanciando os hooks de Scroll e Arrastar para os filtros
   const categoryScrollRef = useDraggableScroll();
   const subcategoryScrollRef = useDraggableScroll();
 
@@ -313,12 +310,10 @@ export default function App() {
     showNotification('success', 'Desconectado', 'Sua sessão foi encerrada com segurança.');
   };
 
-  // NOVO: Função para disparar o modal de confirmação de exclusão
   const handleDeleteItem = (id) => {
     setItemToDelete(id);
   };
 
-  // NOVO: Função que de fato exclui o item após confirmação
   const confirmDelete = async () => {
     if (!itemToDelete) return;
     try {
@@ -432,10 +427,9 @@ export default function App() {
     <div className="min-h-screen">
       <div ref={topRef}></div>
       
-<nav className="sticky top-0 z-50 bg-[#192d55] text-white shadow-md">
+      <nav className="sticky top-0 z-50 bg-[#192d55] text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 flex flex-wrap md:flex-nowrap items-center justify-between gap-3 md:gap-4">
           
-          {/* 1. LOGO E TEXTO */}
           <button onClick={() => topRef.current?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity order-1 shrink-0">
             <div className="w-10 h-10 rounded-sm flex items-center justify-center">
               <img src="/seap_logo.png" alt="SEAP Logo" />
@@ -446,7 +440,6 @@ export default function App() {
             </div>
           </button>
 
-          {/* 2. BARRA DE PESQUISA */}
           <div className="flex-1 min-w-0 md:w-1/3 order-2">
             <input 
               type="text" 
@@ -457,14 +450,12 @@ export default function App() {
             />
           </div>
 
-          {/* 3. BOTÃO DE TEMA */}
           <div className="order-3 shrink-0">
             <button onClick={() => setDarkMode(!darkMode)} className="p-2 hover:bg-white/10 rounded-sm transition">
               {darkMode ? '☀️' : '🌙'}
             </button>
           </div>
 
-          {/* 4. BOTÃO SERVIDOR E ADMIN (Agora fixo na ordem 4, ficando na extrema direita no PC) */}
           <div className="w-full md:w-auto flex items-center justify-center md:justify-end gap-4 order-4 mt-2 md:mt-0">
             {isAdmin ? (
               <div className="flex items-center gap-3 flex-wrap justify-center md:justify-end">
@@ -577,7 +568,7 @@ export default function App() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
           ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-12">
+            <div className={`grid gap-4 md:gap-12 ${selectedCategory === 'Padaria' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
               {filteredProducts.map(item => (
                 item.type === 'bakery' ? (
                   <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
@@ -719,7 +710,6 @@ const NotificationModal = ({ config, onClose }) => {
   );
 };
 
-// NOVO: Componente do Modal de Confirmação de Exclusão
 const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
 
@@ -945,7 +935,6 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
         <img src={currentImage} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
       </div>
       
-      {/* Ajuste de padding: p-4 no celular, p-6 em telas maiores */}
       <div className="p-4 md:p-6 flex-grow flex flex-col justify-between">
         <div>
           {hasVariations && (
@@ -967,7 +956,6 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
             </div>
           )}
           
-          {/* Ajuste de título: text-base no celular, text-xl em telas maiores */}
           <h4 className="font-serif text-base md:text-xl font-bold text-gray-900 dark:text-white mb-2 md:mb-3 leading-tight">{item.title}</h4>
           
           {featureList.length > 0 && (
@@ -993,7 +981,6 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
           )}
           {isA_PartirDe && <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5 text-left block">A partir de</span>}
           
-          {/* Ajuste de preço: text-2xl no celular, text-4xl em telas maiores */}
           <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif text-left mt-1">
             <span className="text-xs md:text-sm font-bold mt-1 mr-1">R$</span>
             <span className="text-2xl md:text-4xl font-bold leading-none">{intPrice}</span>
@@ -1010,17 +997,14 @@ const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
   const [intPrice, decPrice] = formatBRL(item.price).split(',');
 
   return (
-    // Ajuste de padding: p-5 no celular, p-8 em telas maiores
     <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-5 md:p-8">
       {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onDelete} onEdit={onEdit} />}
       <div className="text-center mb-6 md:mb-8 border-b border-gray-100 dark:border-slate-700 pb-4 md:pb-6">
          <span className="text-[#c78c2b] text-[10px] md:text-xs font-bold uppercase tracking-widest block mb-1 md:mb-2">Serviço de Padaria</span>
-         {/* Ajuste de título principal */}
          <h4 className="font-serif text-lg md:text-2xl font-bold text-gray-900 dark:text-white leading-tight">{item.title}</h4>
          {item.description && <p className="text-xs md:text-sm text-gray-500 mt-2 md:mt-3 font-light italic">"{item.description}"</p>}
       </div>
       
-      {/* Ajuste de espaçamento nas colunas de ingredientes */}
       <div className="grid grid-cols-2 gap-3 md:gap-6 flex-grow mb-6 md:mb-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 font-light">
         <div>
           <h5 className="font-bold text-[10px] md:text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 md:mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Comestíveis</h5>
@@ -1039,7 +1023,6 @@ const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
       <div className="text-center bg-gray-50 dark:bg-slate-900 py-3 md:py-4 rounded-xl mt-auto border-t border-black/10 dark:border-white/10 flex flex-col items-center">
         <span className="text-xs md:text-sm text-gray-500 uppercase tracking-widest block mb-1 md:mb-2">Investimento</span>
         
-        {/* Ajuste de preço de destaque: text-3xl no celular, text-5xl em telas maiores */}
         <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif mt-1 md:mt-2">
           <span className="text-sm md:text-base font-bold mt-1 md:mt-1.5 mr-1">R$</span>
           <span className="text-3xl md:text-5xl font-bold leading-none">{intPrice}</span>
