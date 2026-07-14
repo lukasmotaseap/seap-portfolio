@@ -935,7 +935,6 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   let suffix = 'unid.';
   if (item.subcategory === 'Pavimentação') suffix = 'm²';
 
-  // Corta a string do preço ao meio na vírgula para formatação customizada
   const [intPrice, decPrice] = formatBRL(item.price).split(',');
 
   return (
@@ -946,36 +945,38 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
         <img src={currentImage} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
       </div>
       
-      <div className="p-6 flex-grow flex flex-col justify-between">
+      {/* Ajuste de padding: p-4 no celular, p-6 em telas maiores */}
+      <div className="p-4 md:p-6 flex-grow flex flex-col justify-between">
         <div>
           {hasVariations && (
-            <div className="flex gap-2 mb-4 flex-wrap items-center">
+            <div className="flex gap-1.5 md:gap-2 mb-3 md:mb-4 flex-wrap items-center">
               {item.image_url || item.image ? (
-                <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-6 h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300 dark:border-slate-600'}`}>
+                <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300 dark:border-slate-600'}`}>
                   <img src={defaultImage} alt="Principal" className="w-full h-full object-cover" />
                 </button>
               ) : null}
-              {item.image_url || item.image ? <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div> : null}
+              {item.image_url || item.image ? <div className="w-px h-3 md:h-4 bg-gray-300 dark:bg-slate-600 mx-0.5 md:mx-1"></div> : null}
 
               {item.colors?.map(c => (
-                <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-5 h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} style={{ backgroundColor: c.code }} />
+                <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-4 h-4 md:w-5 md:h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} style={{ backgroundColor: c.code }} />
               ))}
-              {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-1"></div>}
+              {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-3 md:h-4 bg-gray-300 dark:bg-slate-600 mx-0.5 md:mx-1"></div>}
               {item.mdfs?.map(m => (
-                <button key={m.name} title={m.name} onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b]' : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-200 dark:hover:bg-slate-600'}`}>{m.name}</button>
+                <button key={m.name} title={m.name} onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} className={`px-1.5 py-0.5 md:px-2 md:py-0.5 text-[8px] md:text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b]' : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-200 dark:hover:bg-slate-600'}`}>{m.name}</button>
               ))}
             </div>
           )}
           
-          <h4 className="font-serif text-xl font-bold text-gray-900 dark:text-white mb-3 leading-tight">{item.title}</h4>
+          {/* Ajuste de título: text-base no celular, text-xl em telas maiores */}
+          <h4 className="font-serif text-base md:text-xl font-bold text-gray-900 dark:text-white mb-2 md:mb-3 leading-tight">{item.title}</h4>
           
           {featureList.length > 0 && (
-             <ul className="text-sm text-gray-600 dark:text-gray-400 font-light mb-4 space-y-1 list-disc list-inside marker:text-[#c78c2b]">
+             <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-light mb-3 md:mb-4 space-y-1 list-disc list-inside marker:text-[#c78c2b]">
                {featureList.map((f, i) => <li key={i}>{f}</li>)}
              </ul>
           )}
 
-          <div className="space-y-1 mb-6 text-xs text-gray-500 uppercase tracking-widest">
+          <div className="space-y-1 mb-4 md:mb-6 text-[10px] md:text-xs text-gray-500 uppercase tracking-widest leading-relaxed">
             {item.specification && <p><span className="font-bold text-gray-700 dark:text-gray-300">Especificação:</span> {item.specification}</p>}
             {item.fnde_standard && <p className="text-[#2d6a4f] dark:text-[#4ade80] font-bold">Padrão FNDE ✓</p>}
             {item.dimensions && <p><span className="font-bold text-gray-700 dark:text-gray-300">Dimensões:</span> {item.dimensions}</p>}
@@ -983,21 +984,21 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
           </div>
         </div>
         
-        <div className="flex flex-col items-start mt-auto pt-4 border-t border-gray-100 dark:border-slate-700">
+        <div className="flex flex-col items-start mt-auto pt-3 md:pt-4 border-t border-gray-100 dark:border-slate-700">
           {item.m2_price && (
-            <div className="mb-2 w-full flex justify-between items-center text-xs text-gray-500 uppercase tracking-widest border-b border-dashed border-gray-200 dark:border-slate-600 pb-2">
+            <div className="mb-2 w-full flex justify-between items-center text-[10px] md:text-xs text-gray-500 uppercase tracking-widest border-b border-dashed border-gray-200 dark:border-slate-600 pb-2">
               <span>Valor do m²</span>
               <span className="font-bold text-gray-700 dark:text-gray-300">R$ {formatBRL(item.m2_price)}</span>
             </div>
           )}
-          {isA_PartirDe && <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5 text-left block">A partir de</span>}
+          {isA_PartirDe && <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5 text-left block">A partir de</span>}
           
-          {/* LAYOUT TIPOGRÁFICO DE PREÇO ATUALIZADO */}
+          {/* Ajuste de preço: text-2xl no celular, text-4xl em telas maiores */}
           <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif text-left mt-1">
-            <span className="text-sm font-bold mt-1 mr-1">R$</span>
-            <span className="text-4xl font-bold leading-none">{intPrice}</span>
-            <span className="text-sm font-bold mt-1">,{decPrice}</span>
-            <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-2 mb-0.5 self-end">/ {suffix}</span>
+            <span className="text-xs md:text-sm font-bold mt-1 mr-1">R$</span>
+            <span className="text-2xl md:text-4xl font-bold leading-none">{intPrice}</span>
+            <span className="text-xs md:text-sm font-bold mt-1">,{decPrice}</span>
+            <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest ml-1.5 md:ml-2 mb-0.5 self-end">/ {suffix}</span>
           </div>
         </div>
       </div>
@@ -1006,42 +1007,44 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
 };
 
 const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
-  // Corta a string do preço ao meio na vírgula para formatação customizada
   const [intPrice, decPrice] = formatBRL(item.price).split(',');
 
   return (
-    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-8">
+    // Ajuste de padding: p-5 no celular, p-8 em telas maiores
+    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-5 md:p-8">
       {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onDelete} onEdit={onEdit} />}
-      <div className="text-center mb-8 border-b border-gray-100 dark:border-slate-700 pb-6">
-         <span className="text-[#c78c2b] text-xs font-bold uppercase tracking-widest block mb-2">Serviço de Padaria</span>
-         <h4 className="font-serif text-2xl font-bold text-gray-900 dark:text-white leading-tight">{item.title}</h4>
-         {item.description && <p className="text-sm text-gray-500 mt-3 font-light italic">"{item.description}"</p>}
+      <div className="text-center mb-6 md:mb-8 border-b border-gray-100 dark:border-slate-700 pb-4 md:pb-6">
+         <span className="text-[#c78c2b] text-[10px] md:text-xs font-bold uppercase tracking-widest block mb-1 md:mb-2">Serviço de Padaria</span>
+         {/* Ajuste de título principal */}
+         <h4 className="font-serif text-lg md:text-2xl font-bold text-gray-900 dark:text-white leading-tight">{item.title}</h4>
+         {item.description && <p className="text-xs md:text-sm text-gray-500 mt-2 md:mt-3 font-light italic">"{item.description}"</p>}
       </div>
       
-      <div className="grid grid-cols-2 gap-6 flex-grow mb-8 text-sm text-gray-700 dark:text-gray-300 font-light">
+      {/* Ajuste de espaçamento nas colunas de ingredientes */}
+      <div className="grid grid-cols-2 gap-3 md:gap-6 flex-grow mb-6 md:mb-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 font-light">
         <div>
-          <h5 className="font-bold text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Comestíveis</h5>
-          <ul className="space-y-2 list-disc list-inside marker:text-[#c78c2b]">
+          <h5 className="font-bold text-[10px] md:text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 md:mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Comestíveis</h5>
+          <ul className="space-y-1.5 md:space-y-2 list-disc list-inside marker:text-[#c78c2b]">
             {(item.foods || []).map((f, i) => <li key={i}>{f}</li>)}
           </ul>
         </div>
         <div>
-          <h5 className="font-bold text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Bebidas</h5>
-          <ul className="space-y-2 list-disc list-inside marker:text-[#d12229]">
+          <h5 className="font-bold text-[10px] md:text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 md:mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Bebidas</h5>
+          <ul className="space-y-1.5 md:space-y-2 list-disc list-inside marker:text-[#d12229]">
             {(item.drinks || []).map((d, i) => <li key={i}>{d}</li>)}
           </ul>
         </div>
       </div>
       
-      <div className="text-center bg-gray-50 dark:bg-slate-900 py-4 rounded-xl mt-auto border-t border-black/10 dark:border-white/10 flex flex-col items-center">
-        <span className="text-sm text-gray-500 uppercase tracking-widest block mb-2">Investimento</span>
+      <div className="text-center bg-gray-50 dark:bg-slate-900 py-3 md:py-4 rounded-xl mt-auto border-t border-black/10 dark:border-white/10 flex flex-col items-center">
+        <span className="text-xs md:text-sm text-gray-500 uppercase tracking-widest block mb-1 md:mb-2">Investimento</span>
         
-        {/* LAYOUT TIPOGRÁFICO DE PREÇO ATUALIZADO (Maior por ser destaque) */}
-        <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif mt-2">
-          <span className="text-base font-bold mt-1.5 mr-1">R$</span>
-          <span className="text-5xl font-bold leading-none">{intPrice}</span>
-          <span className="text-base font-bold mt-1.5">,{decPrice}</span>
-          <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-2 mb-1 self-end">/ {item.price_unit || 'pessoa'}</span>
+        {/* Ajuste de preço de destaque: text-3xl no celular, text-5xl em telas maiores */}
+        <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif mt-1 md:mt-2">
+          <span className="text-sm md:text-base font-bold mt-1 md:mt-1.5 mr-1">R$</span>
+          <span className="text-3xl md:text-5xl font-bold leading-none">{intPrice}</span>
+          <span className="text-sm md:text-base font-bold mt-1 md:mt-1.5">,{decPrice}</span>
+          <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest ml-1.5 md:ml-2 mb-0.5 md:mb-1 self-end">/ {item.price_unit || 'pessoa'}</span>
         </div>
       </div>
     </div>
