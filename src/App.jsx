@@ -54,32 +54,6 @@ function useDraggableScroll() {
   return ref;
 }
 
-// Escuta o botão "Voltar" do próprio navegador para fechar o roteiro
-useEffect(() => {
-  const handlePopState = (event) => {
-    if (!event.state || event.state.page !== 'roadmap') {
-      setShowRoadmap(false);
-    }
-  };
-
-  window.addEventListener('popstate', handlePopState);
-  return () => window.removeEventListener('popstate', handlePopState);
-}, []);
-
-const handleOpenRoadmap = () => {
-  setShowRoadmap(true);
-  // Empurra um estado temporário para o histórico do navegador
-  window.history.pushState({ page: 'roadmap' }, '');
-};
-
-const handleCloseRoadmap = () => {
-  setShowRoadmap(false);
-  // Se o usuário clicar no botão voltar de dentro do app, limpa o histórico
-  if (window.history.state?.page === 'roadmap') {
-    window.history.back();
-  }
-};
-
 const formatBRL = (value) => {
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 };
