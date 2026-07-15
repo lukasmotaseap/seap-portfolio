@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
+import React, { useState, Suspense, lazy } from 'react';
+import PisciculturaBanner from './components/PisciculturaBanner';
 
 // Hook Customizado: Permite "Clicar e Arrastar" para rolar (Efeito Netflix)
 function useDraggableScroll() {
@@ -60,6 +62,59 @@ const initialSections = {
   dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
   cleaning: { img: "/limpeza_e_manutenção.jpg" }
 };
+
+// Lazy loading do Roteiro detalhado: o arquivo só é carregado se o usuário clicar
+const PisciculturaRoadmap = lazy(() => import('./components/PisciculturaRoadmap'));
+
+export default function App() {
+  const [showRoadmap, setShowRoadmap] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Container principal */}
+      <main className="max-w-7xl mx-auto px-4 py-6">
+        
+        {/* Renderização Condicional Inteligente */}
+        {!showRoadmap ? (
+          <>
+            {/* 1. SEÇÃO ANTES DOS PRODUTOS: Banner Piscicultura */}
+            <PisciculturaBanner onViewDetails={() => setShowRoadmap(true)} />
+
+            {/* 2. SUA SEÇÃO DE PRODUTOS EXISTENTE */}
+            <section className="my-12">
+              <h2 className="text-2xl font-bold text-slate-800 mb-6">Nossos Produtos</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Seus cards de produto entram aqui */}
+                <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
+                  <h3 className="font-bold text-lg">Produto Exemplo 1</h3>
+                  <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
+                </div>
+                <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
+                  <h3 className="font-bold text-lg">Produto Exemplo 2</h3>
+                  <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
+                </div>
+                <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
+                  <h3 className="font-bold text-lg">Produto Exemplo 3</h3>
+                  <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
+                </div>
+              </div>
+            </section>
+          </>
+        ) : (
+          /* 3. PÁGINA DO ROTEIRO: Carrega via Suspense para não travar a UI */
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+            </div>
+          }>
+            <PisciculturaRoadmap onBack={() => setShowRoadmap(false)} />
+          </Suspense>
+        )}
+
+      </main>
+    </div>
+  );
+}
 
 export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
