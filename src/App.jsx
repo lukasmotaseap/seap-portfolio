@@ -1,11 +1,8 @@
-import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
 import PisciculturaBanner from './components/PisciculturaBanner';
-
-// Lazy Loading da página do Roteiro Técnico da Piscicultura
-const PisciculturaRoadmap = lazy(() => import('./components/PisciculturaRoadmap.jsx'));
 
 // Hook Customizado: Permite "Clicar e Arrastar" para rolar (Efeito Netflix)
 function useDraggableScroll() {
@@ -66,7 +63,7 @@ const initialSections = {
 };
 
 export default function App() {
-  const [showRoadmap, setShowRoadmap] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState(null); 
   const [darkMode, setDarkMode] = useState(false);
@@ -116,11 +113,11 @@ export default function App() {
   }, [darkMode]);
 
   useEffect(() => {
-    if (fullscreenImage || notify.isOpen || itemToDelete) document.body.style.overflow = 'hidden';
+    if (fullscreenImage || notify.isOpen || itemToDelete || showPdfModal) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'auto';
     
     return () => { document.body.style.overflow = 'auto'; };
-  }, [fullscreenImage, notify.isOpen, itemToDelete]);
+  }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal]);
 
   useEffect(() => {
     checkSession();
@@ -486,147 +483,132 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-8 md:py-12 space-y-12 md:space-y-20">
         
-        {!showRoadmap ? (
-          <>
-            {/* Banner Interativo da Piscicultura */}
-            <PisciculturaBanner onViewDetails={() => setShowRoadmap(true)} />
+        {/* Banner Interativo da Piscicultura */}
+        <PisciculturaBanner onViewDetails={() => setShowPdfModal(true)} />
 
-            {/* Seção 1: Excelência e Reintegração */}
-            <section className="relative pt-8 pb-12 md:pt-12 md:pb-24 text-center border-b border-gray-200 dark:border-slate-700">
-              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4 md:mb-6">
-                {sections.hero.title}
-              </h2>
-              <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
-                {sections.hero.subtitle}
-              </p>
-            </section>
+        {/* Seção 1: Excelência e Reintegração */}
+        <section className="relative pt-8 pb-12 md:pt-12 md:pb-24 text-center border-b border-gray-200 dark:border-slate-700">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4 md:mb-6">
+            {sections.hero.title}
+          </h2>
+          <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
+            {sections.hero.subtitle}
+          </p>
+        </section>
 
-            {/* Seção 2: Quem somos nós */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
-              <div className="order-2 md:order-1">
-                <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8">
-                  Quem somos nós
-                </h3>
-                <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
-                  {sections.about.text}
-                </p>
-              </div>
-              <div className="order-1 md:order-2 flex justify-center">
-                <div className="aspect-[540/716] w-full max-w-[200px] sm:max-w-[250px] md:max-w-[300px]">
-                  <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
-                </div>
-              </div>
-            </section>
+        {/* Seção 2: Quem somos nós */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
+          <div className="order-2 md:order-1">
+            <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8">
+              Quem somos nós
+            </h3>
+            <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
+              {sections.about.text}
+            </p>
+          </div>
+          <div className="order-1 md:order-2 flex justify-center">
+            <div className="aspect-[540/716] w-full max-w-[200px] sm:max-w-[250px] md:max-w-[300px]">
+              <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+            </div>
+          </div>
+        </section>
 
-            {/* Seção 3: Trabalho com Dignidade */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
-              <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[280px] sm:max-w-[400px] md:max-w-none mx-auto md:mx-0">
-                <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-md" />
-                <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" />
+        {/* Seção 3: Trabalho com Dignidade */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
+          <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[280px] sm:max-w-[400px] md:max-w-none mx-auto md:mx-0">
+            <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-md" />
+            <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" />
+          </div>
+          <div>
+            <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-4 md:mb-8">
+              Trabalho com Dignidade
+            </h3>
+            <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
+              {sections.dignity.text}
+            </p>
+          </div>
+        </section>
+
+        <section ref={productsRef} className="pt-12 relative pb-16">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
+            <h3 className="font-serif text-4xl md:text-5xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
+            {isAdmin && (
+              <div className="flex gap-2">
+                <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
+                  + Novo Produto
+                </button>
+                <button onClick={() => { setBakeryToEdit(null); setIsBakeryModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
+                  + Novo Combo
+                </button>
               </div>
+            )}
+          </div>
+
+          {!isLoading && catalog.length > 0 && (
+            <div className="mb-10 space-y-4">
               <div>
-                <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-4 md:mb-8">
-                  Trabalho com Dignidade
-                </h3>
-                <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
-                  {sections.dignity.text}
-                </p>
-              </div>
-            </section>
-
-            <section ref={productsRef} className="pt-12 relative pb-16">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
-                <h3 className="font-serif text-4xl md:text-5xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
-                {isAdmin && (
-                  <div className="flex gap-2">
-                    <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
-                      + Novo Produto
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
+                <div 
+                  ref={categoryScrollRef}
+                  className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x select-none [&::-webkit-scrollbar]:hidden"
+                >
+                  {availableCategories.map(cat => (
+                    <button 
+                      key={cat} 
+                      onClick={() => { setSelectedCategory(cat); setSelectedSubcategory('Todas'); }} 
+                      className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
+                      {cat}
                     </button>
-                    <button onClick={() => { setBakeryToEdit(null); setIsBakeryModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
-                      + Novo Combo
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {!isLoading && catalog.length > 0 && (
-                <div className="mb-10 space-y-4">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
-                    <div 
-                      ref={categoryScrollRef}
-                      className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x select-none [&::-webkit-scrollbar]:hidden"
-                    >
-                      {availableCategories.map(cat => (
-                        <button 
-                          key={cat} 
-                          onClick={() => { setSelectedCategory(cat); setSelectedSubcategory('Todas'); }} 
-                          className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
-                          {cat}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {availableSubcategories.length > 0 && (
-                    <div className="animate-fade-in pl-2 border-l-2 border-gray-200 dark:border-slate-700">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar Subcategoria</span>
-                      <div 
-                        ref={subcategoryScrollRef}
-                        className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x select-none [&::-webkit-scrollbar]:hidden"
-                      >
-                        {availableSubcategories.map(sub => (
-                          <button 
-                            key={sub} 
-                            onClick={() => setSelectedSubcategory(sub)} 
-                            className={`text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedSubcategory === sub ? 'bg-[#192d55] text-white border-[#192d55] shadow-sm' : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
-                            {sub}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {isLoading ? (
-                <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando catálogo...</div>
-              ) : filteredProducts.length === 0 ? (
-                <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
-              ) : (
-                <div className={`grid gap-4 md:gap-12 ${selectedCategory === 'Padaria' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
-                  {filteredProducts.map(item => (
-                    item.type === 'bakery' ? (
-                      <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
-                    ) : (
-                      <ProductCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }} onImageClick={setFullscreenImage} />
-                    )
                   ))}
                 </div>
+              </div>
+
+              {availableSubcategories.length > 0 && (
+                <div className="animate-fade-in pl-2 border-l-2 border-gray-200 dark:border-slate-700">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar Subcategoria</span>
+                  <div 
+                    ref={subcategoryScrollRef}
+                    className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x select-none [&::-webkit-scrollbar]:hidden"
+                  >
+                    {availableSubcategories.map(sub => (
+                      <button 
+                        key={sub} 
+                        onClick={() => setSelectedSubcategory(sub)} 
+                        className={`text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedSubcategory === sub ? 'bg-[#192d55] text-white border-[#192d55] shadow-sm' : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
+                        {sub}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
-            </section>
-          </>
-        ) : (
-          /* Página do Roteiro Técnico carregada sob demanda via Lazy Loading */
-          <Suspense fallback={
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
             </div>
-          }>
-            <PisciculturaRoadmap onBack={() => setShowRoadmap(false)} />
-          </Suspense>
-        )}
+          )}
+
+          {isLoading ? (
+            <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando catálogo...</div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
+          ) : (
+            <div className={`grid gap-4 md:gap-12 ${selectedCategory === 'Padaria' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
+              {filteredProducts.map(item => (
+                item.type === 'bakery' ? (
+                  <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
+                ) : (
+                  <ProductCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }} onImageClick={setFullscreenImage} />
+                )
+              ))}
+            </div>
+          )}
+        </section>
       </main>
 
-      {!showRoadmap && (
-        <section className="relative mt-8">
-           <div className="w-full aspect-[1749/1241] bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
-              {sections.cleaning.img ? (
-                <img src={sections.cleaning.img} alt="Limpeza" className="w-full h-full object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen" />
-              ) : <span className="text-gray-400 font-serif italic">Espaço reservado</span>}
-           </div>
-        </section>
-      )}
+      <section className="relative mt-8">
+          <div className="w-full aspect-[1749/1241] bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
+            {sections.cleaning.img ? (
+              <img src={sections.cleaning.img} alt="Limpeza" className="w-full h-full object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen" />
+            ) : <span className="text-gray-400 font-serif italic">Espaço reservado</span>}
+          </div>
+      </section>
 
       <footer className="bg-[#0f172a] text-white pt-20 pb-10 border-t-4 border-[#c78c2b]">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
@@ -690,9 +672,62 @@ export default function App() {
       
       <NotificationModal config={notify} onClose={() => setNotify(prev => ({ ...prev, isOpen: false }))} />
       <ConfirmDeleteModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} />
+      
+      {/* NOVO MODAL DO PDF */}
+      <PdfPreviewModal isOpen={showPdfModal} onClose={() => setShowPdfModal(false)} />
     </div>
   );
 }
+
+// =====================================================================
+// COMPONENTES DE APOIO E MODAIS
+// =====================================================================
+
+const PdfPreviewModal = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+
+  // IMPORTANTE: Substitua o valor desta variável pelo caminho real do seu PDF
+  // Exemplo: "/roteiro_piscicultura.pdf" (se estiver na pasta public do seu projeto React)
+  const pdfUrl = "/public/Piscultura_Intensiva.pdf"; 
+
+  return (
+    <div className="fixed inset-0 z-[300] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-2 md:p-6">
+      <div className="bg-white dark:bg-slate-800 w-full max-w-5xl h-[95vh] md:h-[90vh] flex flex-col rounded-xl overflow-hidden shadow-2xl relative border border-gray-200 dark:border-slate-700">
+        
+        {/* Header / Ações */}
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 shrink-0">
+          <div>
+            <h2 className="font-serif text-base md:text-xl font-bold text-[#192d55] dark:text-white">
+              Roteiro Técnico
+            </h2>
+            <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">Piscicultura</p>
+          </div>
+          <div className="flex items-center gap-2 md:gap-4">
+            <a 
+              href={pdfUrl} 
+              download 
+              className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] md:text-xs uppercase font-bold tracking-widest px-3 py-2 md:px-4 md:py-2 rounded-sm shadow-md transition-all flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+              <span className="hidden sm:inline">Baixar PDF</span>
+            </a>
+            <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-[#d12229] transition-colors ml-2">&times;</button>
+          </div>
+        </div>
+        
+        {/* Visualizador de PDF (Iframe Nativo) */}
+        <div className="flex-grow w-full bg-gray-100 dark:bg-slate-900 relative">
+          <iframe 
+            src={`${pdfUrl}#view=FitH`} 
+            title="Pré-visualização do PDF Roteiro da Piscicultura" 
+            className="absolute inset-0 w-full h-full border-none"
+          />
+        </div>
+
+      </div>
+    </div>
+  );
+};
 
 const NotificationModal = ({ config, onClose }) => {
   if (!config.isOpen) return null;
