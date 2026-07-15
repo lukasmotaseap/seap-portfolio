@@ -9,30 +9,30 @@ jobs:
   web-deploy:
     name: 🎉 Deploy Automatico
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: 🚚 Obter codigo
-      uses: actions/checkout@v3
+      - name: 🚚 Obter codigo
+        uses: actions/checkout@v4
 
-    - name: ⚙️ Configurar Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
+      - name: ⚙️ Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
 
-    - name: 📦 Instalar dependencias
-      run: npm install
+      - name: 📦 Instalar dependencias
+        run: npm install
 
-    - name: 🛠️ Gerar Build
-      run: npm run build
-      env:
-        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+      - name: 🛠️ Gerar Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-    - name: 🚀 Sincronizar com Hostinger
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        local-dir: ./dist/ # Mude para ./build/ se o seu projeto for Create React App antigo
-        server-dir: ./
+      - name: 🚀 Sincronizar com Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/ # Mude para ./build/ se o seu projeto for Create React App antigo
+          server-dir: ./
