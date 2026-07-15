@@ -479,32 +479,50 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12 space-y-20">
-        <section className="relative pt-12 pb-24 text-center border-b border-gray-200 dark:border-slate-700">
-          <h2 className="font-serif text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-6">{sections.hero.title}</h2>
-          <p className="max-w-2xl mx-auto text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">{sections.hero.subtitle}</p>
+      <main className="max-w-7xl mx-auto px-6 py-8 md:py-12 space-y-12 md:space-y-20">
+        
+        {/* Seção 1: Excelência e Reintegração */}
+        <section className="relative pt-8 pb-12 md:pt-12 md:pb-24 text-center border-b border-gray-200 dark:border-slate-700">
+          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4 md:mb-6">
+            {sections.hero.title}
+          </h2>
+          <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
+            {sections.hero.subtitle}
+          </p>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
+        {/* Seção 2: Quem somos nós */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
           <div className="order-2 md:order-1">
-            <h3 className="font-serif text-4xl md:text-5xl font-semibold text-[#d12229] mb-8">Quem somos nós</h3>
-            <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">{sections.about.text}</p>
+            <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8">
+              Quem somos nós
+            </h3>
+            <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
+              {sections.about.text}
+            </p>
           </div>
           <div className="order-1 md:order-2 flex justify-center">
-            <div className="aspect-[540/716] w-full max-w-[300px]">
+            {/* A imagem reduz para 200px em celulares pequenos, 250px em normais e 300px no desktop */}
+            <div className="aspect-[540/716] w-full max-w-[200px] sm:max-w-[250px] md:max-w-[300px]">
               <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
             </div>
           </div>
         </section>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center relative">
-          <div className="aspect-[1956/1505] overflow-hidden">
+        {/* Seção 3: Trabalho com Dignidade */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
+          {/* Centraliza e controla a largura da imagem no mobile */}
+          <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[280px] sm:max-w-[400px] md:max-w-none mx-auto md:mx-0">
             <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-md" />
             <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" />
           </div>
           <div>
-            <h3 className="font-serif text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-8">Trabalho com Dignidade</h3>
-            <p className="text-lg leading-loose text-gray-700 dark:text-gray-300 font-light">{sections.dignity.text}</p>
+            <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-4 md:mb-8">
+              Trabalho com Dignidade
+            </h3>
+            <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
+              {sections.dignity.text}
+            </p>
           </div>
         </section>
 
