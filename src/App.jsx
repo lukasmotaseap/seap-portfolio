@@ -67,56 +67,6 @@ const initialSections = {
 const PisciculturaRoadmap = lazy(() => import('./components/PisciculturaRoadmap'));
 
 export default function App() {
-  const [showRoadmap, setShowRoadmap] = useState(false);
-
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Container principal */}
-      <main className="max-w-7xl mx-auto px-4 py-6">
-        
-        {/* Renderização Condicional Inteligente */}
-        {!showRoadmap ? (
-          <>
-            {/* 1. SEÇÃO ANTES DOS PRODUTOS: Banner Piscicultura */}
-            <PisciculturaBanner onViewDetails={() => setShowRoadmap(true)} />
-
-            {/* 2. SUA SEÇÃO DE PRODUTOS EXISTENTE */}
-            <section className="my-12">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6">Nossos Produtos</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Seus cards de produto entram aqui */}
-                <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
-                  <h3 className="font-bold text-lg">Produto Exemplo 1</h3>
-                  <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
-                </div>
-                <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
-                  <h3 className="font-bold text-lg">Produto Exemplo 2</h3>
-                  <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
-                </div>
-                <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
-                  <h3 className="font-bold text-lg">Produto Exemplo 3</h3>
-                  <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
-                </div>
-              </div>
-            </section>
-          </>
-        ) : (
-          /* 3. PÁGINA DO ROTEIRO: Carrega via Suspense para não travar a UI */
-          <Suspense fallback={
-            <div className="flex items-center justify-center min-h-[400px]">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
-            </div>
-          }>
-            <PisciculturaRoadmap onBack={() => setShowRoadmap(false)} />
-          </Suspense>
-        )}
-
-      </main>
-    </div>
-  );
-}
-
-export default function App() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState(null); 
   const [darkMode, setDarkMode] = useState(false);
@@ -580,6 +530,54 @@ export default function App() {
             </p>
           </div>
         </section>
+
+          const [showRoadmap, setShowRoadmap] = useState(false);
+
+          return (
+            <div className="min-h-screen bg-white">
+              {/* Container principal */}
+              <main className="max-w-7xl mx-auto px-4 py-6">
+                
+                {/* Renderização Condicional Inteligente */}
+                {!showRoadmap ? (
+                  <>
+                    {/* 1. SEÇÃO ANTES DOS PRODUTOS: Banner Piscicultura */}
+                    <PisciculturaBanner onViewDetails={() => setShowRoadmap(true)} />
+
+                    {/* 2. SUA SEÇÃO DE PRODUTOS EXISTENTE */}
+                    <section className="my-12">
+                      <h2 className="text-2xl font-bold text-slate-800 mb-6">Nossos Produtos</h2>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Seus cards de produto entram aqui */}
+                        <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
+                          <h3 className="font-bold text-lg">Produto Exemplo 1</h3>
+                          <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
+                        </div>
+                        <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
+                          <h3 className="font-bold text-lg">Produto Exemplo 2</h3>
+                          <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
+                        </div>
+                        <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
+                          <h3 className="font-bold text-lg">Produto Exemplo 3</h3>
+                          <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
+                        </div>
+                      </div>
+                    </section>
+                  </>
+                ) : (
+                  /* 3. PÁGINA DO ROTEIRO: Carrega via Suspense para não travar a UI */
+                  <Suspense fallback={
+                    <div className="flex items-center justify-center min-h-[400px]">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
+                    </div>
+                  }>
+                    <PisciculturaRoadmap onBack={() => setShowRoadmap(false)} />
+                  </Suspense>
+                )}
+
+              </main>
+            </div>
+          );
 
         <section ref={productsRef} className="pt-12 relative pb-16">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
