@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, Suspense, lazy } from 'react';
 import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
-import React, { useState, Suspense, lazy } from 'react';
 import PisciculturaBanner from './components/PisciculturaBanner';
+
+// Lazy Loading da página do Roteiro Técnico da Piscicultura
+const PisciculturaRoadmap = lazy(() => import('./components/PisciculturaRoadmap'));
 
 // Hook Customizado: Permite "Clicar e Arrastar" para rolar (Efeito Netflix)
 function useDraggableScroll() {
@@ -58,15 +60,13 @@ const formatBRL = (value) => {
 
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
-  about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administração, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
+  about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administration, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
   dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
   cleaning: { img: "/limpeza_e_manutenção.jpg" }
 };
 
-// Lazy loading do Roteiro detalhado: o arquivo só é carregado se o usuário clicar
-const PisciculturaRoadmap = lazy(() => import('./components/PisciculturaRoadmap'));
-
 export default function App() {
+  const [showRoadmap, setShowRoadmap] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState(null); 
   const [darkMode, setDarkMode] = useState(false);
@@ -486,179 +486,147 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-8 md:py-12 space-y-12 md:space-y-20">
         
-        {/* Seção 1: Excelência e Reintegração */}
-        <section className="relative pt-8 pb-12 md:pt-12 md:pb-24 text-center border-b border-gray-200 dark:border-slate-700">
-          <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4 md:mb-6">
-            {sections.hero.title}
-          </h2>
-          <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
-            {sections.hero.subtitle}
-          </p>
-        </section>
+        {!showRoadmap ? (
+          <>
+            {/* Banner Interativo da Piscicultura */}
+            <PisciculturaBanner onViewDetails={() => setShowRoadmap(true)} />
 
-        {/* Seção 2: Quem somos nós */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
-          <div className="order-2 md:order-1">
-            <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8">
-              Quem somos nós
-            </h3>
-            <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
-              {sections.about.text}
-            </p>
-          </div>
-          <div className="order-1 md:order-2 flex justify-center">
-            {/* A imagem reduz para 200px em celulares pequenos, 250px em normais e 300px no desktop */}
-            <div className="aspect-[540/716] w-full max-w-[200px] sm:max-w-[250px] md:max-w-[300px]">
-              <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
-            </div>
-          </div>
-        </section>
+            {/* Seção 1: Excelência e Reintegração */}
+            <section className="relative pt-8 pb-12 md:pt-12 md:pb-24 text-center border-b border-gray-200 dark:border-slate-700">
+              <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4 md:mb-6">
+                {sections.hero.title}
+              </h2>
+              <p className="max-w-2xl mx-auto text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
+                {sections.hero.subtitle}
+              </p>
+            </section>
 
-        {/* Seção 3: Trabalho com Dignidade */}
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
-          {/* Centraliza e controla a largura da imagem no mobile */}
-          <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[280px] sm:max-w-[400px] md:max-w-none mx-auto md:mx-0">
-            <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-md" />
-            <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" />
-          </div>
-          <div>
-            <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-4 md:mb-8">
-              Trabalho com Dignidade
-            </h3>
-            <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
-              {sections.dignity.text}
-            </p>
-          </div>
-        </section>
-
-          const [showRoadmap, setShowRoadmap] = useState(false);
-
-          return (
-            <div className="min-h-screen bg-white">
-              {/* Container principal */}
-              <main className="max-w-7xl mx-auto px-4 py-6">
-                
-                {/* Renderização Condicional Inteligente */}
-                {!showRoadmap ? (
-                  <>
-                    {/* 1. SEÇÃO ANTES DOS PRODUTOS: Banner Piscicultura */}
-                    <PisciculturaBanner onViewDetails={() => setShowRoadmap(true)} />
-
-                    {/* 2. SUA SEÇÃO DE PRODUTOS EXISTENTE */}
-                    <section className="my-12">
-                      <h2 className="text-2xl font-bold text-slate-800 mb-6">Nossos Produtos</h2>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Seus cards de produto entram aqui */}
-                        <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
-                          <h3 className="font-bold text-lg">Produto Exemplo 1</h3>
-                          <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
-                        </div>
-                        <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
-                          <h3 className="font-bold text-lg">Produto Exemplo 2</h3>
-                          <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
-                        </div>
-                        <div className="border border-slate-200 rounded-lg p-6 bg-slate-50">
-                          <h3 className="font-bold text-lg">Produto Exemplo 3</h3>
-                          <p className="text-slate-500 text-sm mt-2">Descrição rápida do produto...</p>
-                        </div>
-                      </div>
-                    </section>
-                  </>
-                ) : (
-                  /* 3. PÁGINA DO ROTEIRO: Carrega via Suspense para não travar a UI */
-                  <Suspense fallback={
-                    <div className="flex items-center justify-center min-h-[400px]">
-                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
-                    </div>
-                  }>
-                    <PisciculturaRoadmap onBack={() => setShowRoadmap(false)} />
-                  </Suspense>
-                )}
-
-              </main>
-            </div>
-          );
-
-        <section ref={productsRef} className="pt-12 relative pb-16">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
-            <h3 className="font-serif text-4xl md:text-5xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
-            {isAdmin && (
-              <div className="flex gap-2">
-                <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
-                  + Novo Produto
-                </button>
-                <button onClick={() => { setBakeryToEdit(null); setIsBakeryModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
-                  + Novo Combo
-                </button>
+            {/* Seção 2: Quem somos nós */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
+              <div className="order-2 md:order-1">
+                <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8">
+                  Quem somos nós
+                </h3>
+                <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
+                  {sections.about.text}
+                </p>
               </div>
-            )}
-          </div>
-
-          {!isLoading && catalog.length > 0 && (
-            <div className="mb-10 space-y-4">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
-                <div 
-                  ref={categoryScrollRef}
-                  className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x select-none [&::-webkit-scrollbar]:hidden"
-                >
-                  {availableCategories.map(cat => (
-                    <button 
-                      key={cat} 
-                      onClick={() => { setSelectedCategory(cat); setSelectedSubcategory('Todas'); }} 
-                      className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
-                      {cat}
-                    </button>
-                  ))}
+              <div className="order-1 md:order-2 flex justify-center">
+                <div className="aspect-[540/716] w-full max-w-[200px] sm:max-w-[250px] md:max-w-[300px]">
+                  <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
                 </div>
               </div>
+            </section>
 
-              {availableSubcategories.length > 0 && (
-                <div className="animate-fade-in pl-2 border-l-2 border-gray-200 dark:border-slate-700">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar Subcategoria</span>
-                  <div 
-                    ref={subcategoryScrollRef}
-                    className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x select-none [&::-webkit-scrollbar]:hidden"
-                  >
-                    {availableSubcategories.map(sub => (
-                      <button 
-                        key={sub} 
-                        onClick={() => setSelectedSubcategory(sub)} 
-                        className={`text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedSubcategory === sub ? 'bg-[#192d55] text-white border-[#192d55] shadow-sm' : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
-                        {sub}
-                      </button>
-                    ))}
+            {/* Seção 3: Trabalho com Dignidade */}
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
+              <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[280px] sm:max-w-[400px] md:max-w-none mx-auto md:mx-0">
+                <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-md" />
+                <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-md" />
+              </div>
+              <div>
+                <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-4 md:mb-8">
+                  Trabalho com Dignidade
+                </h3>
+                <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
+                  {sections.dignity.text}
+                </p>
+              </div>
+            </section>
+
+            <section ref={productsRef} className="pt-12 relative pb-16">
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
+                <h3 className="font-serif text-4xl md:text-5xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
+                      + Novo Produto
+                    </button>
+                    <button onClick={() => { setBakeryToEdit(null); setIsBakeryModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
+                      + Novo Combo
+                    </button>
                   </div>
+                )}
+              </div>
+
+              {!isLoading && catalog.length > 0 && (
+                <div className="mb-10 space-y-4">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar por Categoria</span>
+                    <div 
+                      ref={categoryScrollRef}
+                      className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x select-none [&::-webkit-scrollbar]:hidden"
+                    >
+                      {availableCategories.map(cat => (
+                        <button 
+                          key={cat} 
+                          onClick={() => { setSelectedCategory(cat); setSelectedSubcategory('Todas'); }} 
+                          className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedCategory === cat ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
+                          {cat}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {availableSubcategories.length > 0 && (
+                    <div className="animate-fade-in pl-2 border-l-2 border-gray-200 dark:border-slate-700">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 block mb-3">Filtrar Subcategoria</span>
+                      <div 
+                        ref={subcategoryScrollRef}
+                        className="flex flex-nowrap md:flex-wrap overflow-x-auto md:overflow-visible gap-2 pb-2 snap-x select-none [&::-webkit-scrollbar]:hidden"
+                      >
+                        {availableSubcategories.map(sub => (
+                          <button 
+                            key={sub} 
+                            onClick={() => setSelectedSubcategory(sub)} 
+                            className={`text-[10px] px-3 py-1.5 rounded-sm uppercase tracking-widest font-bold border transition-all snap-start whitespace-nowrap select-none ${selectedSubcategory === sub ? 'bg-[#192d55] text-white border-[#192d55] shadow-sm' : 'bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-slate-700 hover:border-gray-400'}`}>
+                            {sub}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {isLoading ? (
-            <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando catálogo...</div>
-          ) : filteredProducts.length === 0 ? (
-            <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
-          ) : (
-            <div className={`grid gap-4 md:gap-12 ${selectedCategory === 'Padaria' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
-              {filteredProducts.map(item => (
-                item.type === 'bakery' ? (
-                  <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
-                ) : (
-                  <ProductCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }} onImageClick={setFullscreenImage} />
-                )
-              ))}
+              {isLoading ? (
+                <div className="text-center py-20 text-gray-500 font-serif italic">Sincronizando catálogo...</div>
+              ) : filteredProducts.length === 0 ? (
+                <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
+              ) : (
+                <div className={`grid gap-4 md:gap-12 ${selectedCategory === 'Padaria' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
+                  {filteredProducts.map(item => (
+                    item.type === 'bakery' ? (
+                      <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
+                    ) : (
+                      <ProductCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }} onImageClick={setFullscreenImage} />
+                    )
+                  ))}
+                </div>
+              )}
+            </section>
+          </>
+        ) : (
+          /* Página do Roteiro Técnico carregada sob demanda via Lazy Loading */
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500"></div>
             </div>
-          )}
-        </section>
+          }>
+            <PisciculturaRoadmap onBack={() => setShowRoadmap(false)} />
+          </Suspense>
+        )}
       </main>
 
-      <section className="relative mt-8">
-         <div className="w-full aspect-[1749/1241] bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
-            {sections.cleaning.img ? (
-              <img src={sections.cleaning.img} alt="Limpeza" className="w-full h-full object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen" />
-            ) : <span className="text-gray-400 font-serif italic">Espaço reservado</span>}
-         </div>
-      </section>
+      {!showRoadmap && (
+        <section className="relative mt-8">
+           <div className="w-full aspect-[1749/1241] bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
+              {sections.cleaning.img ? (
+                <img src={sections.cleaning.img} alt="Limpeza" className="w-full h-full object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen" />
+              ) : <span className="text-gray-400 font-serif italic">Espaço reservado</span>}
+           </div>
+        </section>
+      )}
 
       <footer className="bg-[#0f172a] text-white pt-20 pb-10 border-t-4 border-[#c78c2b]">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
