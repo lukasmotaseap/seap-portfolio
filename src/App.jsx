@@ -483,9 +483,6 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-8 md:py-12 space-y-12 md:space-y-20">
         
-        {/* Banner Interativo da Piscicultura */}
-        <PisciculturaBanner onViewDetails={() => setShowPdfModal(true)} />
-
         {/* Seção 1: Excelência e Reintegração */}
         <section className="relative pt-8 pb-12 md:pt-12 md:pb-24 text-center border-b border-gray-200 dark:border-slate-700">
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4 md:mb-6">
@@ -528,6 +525,9 @@ export default function App() {
             </p>
           </div>
         </section>
+
+        {/* Banner Interativo da Piscicultura (Mudado para cá) */}
+        <PisciculturaBanner onViewDetails={() => setShowPdfModal(true)} />
 
         <section ref={productsRef} className="pt-12 relative pb-16">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
