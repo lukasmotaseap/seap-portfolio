@@ -688,7 +688,7 @@ const PdfPreviewModal = ({ isOpen, onClose }) => {
 
   // IMPORTANTE: Substitua o valor desta variável pelo caminho real do seu PDF
   // Exemplo: "/roteiro_piscicultura.pdf" (se estiver na pasta public do seu projeto React)
-  const pdfUrl = "seap-portfolio/public/Piscicultura_Intensiva.pdf"; 
+  const pdfUrl = "seap-portfolio-frontend/seap-portfolio/public/Piscicultura_Intensiva.pdf"; 
 
   return (
     <div className="fixed inset-0 z-[300] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-2 md:p-6">
