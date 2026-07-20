@@ -1103,8 +1103,49 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
             <span className="text-xs md:text-sm font-bold mt-1 mr-1">R$</span>
             <span className="text-2xl md:text-4xl font-bold leading-none">{intPrice}</span>
             <span className="text-xs md:text-sm font-bold mt-1">,{decPrice}</span>
-            <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest ml-1.5 md:ml-2 mb-0.5 mt-auto">/ {suffix}</span>
+            <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest ml-1.5 md:ml-2 mb-0.5 self-end">/ {suffix}</span>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
+  const [intPrice, decPrice] = formatBRL(item.price).split(',');
+
+  return (
+    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-5 md:p-8">
+      {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onDelete} onEdit={onEdit} />}
+      <div className="text-center mb-6 md:mb-8 border-b border-gray-100 dark:border-slate-700 pb-4 md:pb-6">
+         <span className="text-[#c78c2b] text-[10px] md:text-xs font-bold uppercase tracking-widest block mb-1 md:mb-2">Serviço de Padaria</span>
+         <h4 className="font-serif text-lg md:text-2xl font-bold text-gray-900 dark:text-white leading-tight">{item.title}</h4>
+         {item.description && <p className="text-xs md:text-sm text-gray-500 mt-2 md:mt-3 font-light italic">"{item.description}"</p>}
+      </div>
+      
+      <div className="grid grid-cols-2 gap-3 md:gap-6 flex-grow mb-6 md:mb-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 font-light">
+        <div>
+          <h5 className="font-bold text-[10px] md:text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 md:mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Comestíveis</h5>
+          <ul className="space-y-1.5 md:space-y-2 list-disc list-inside marker:text-[#c78c2b]">
+            {(item.foods || []).map((f, i) => <li key={i}>{f}</li>)}
+          </ul>
+        </div>
+        <div>
+          <h5 className="font-bold text-[10px] md:text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 md:mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Bebidas</h5>
+          <ul className="space-y-1.5 md:space-y-2 list-disc list-inside marker:text-[#d12229]">
+            {(item.drinks || []).map((d, i) => <li key={i}>{d}</li>)}
+          </ul>
+        </div>
+      </div>
+      
+      <div className="text-center bg-gray-50 dark:bg-slate-900 py-3 md:py-4 rounded-xl mt-auto border-t border-black/10 dark:border-white/10 flex flex-col items-center">
+        <span className="text-xs md:text-sm text-gray-500 uppercase tracking-widest block mb-1 md:mb-2">Investimento</span>
+        
+        <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif mt-1 md:mt-2">
+          <span className="text-sm md:text-base font-bold mt-1 md:mt-1.5 mr-1">R$</span>
+          <span className="text-3xl md:text-5xl font-bold leading-none">{intPrice}</span>
+          <span className="text-sm md:text-base font-bold mt-1 md:mt-1.5">,{decPrice}</span>
+          <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest ml-1.5 md:ml-2 mb-0.5 md:mb-1 self-end">/ {item.price_unit || 'pessoa'}</span>
         </div>
       </div>
     </div>
