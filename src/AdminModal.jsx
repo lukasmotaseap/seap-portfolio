@@ -24,6 +24,14 @@ const CATEGORY_STRUCTURE = {
   ],
   'Pavimentação': [
     'Pavimentação'
+  ],
+  'Artesanato': [
+    'Acessórios',
+    'Ecobag',
+    'Miniaturas',
+    'Itens de São João',
+    'Sacolas',
+    'Outros'
   ]
 };
 
@@ -178,7 +186,13 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
 
   const needsMDF = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas'].includes(sub);
   const needsColors = ['Cadeiras de escritorio', 'Cadeiras e mesa (conjunto aluno)'].includes(sub);
-  const needsDimensions = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas', 'Blocos e Meios-fios'].includes(sub);
+  
+  // Habilitando dimensões também para as subcategorias de Artesanato
+  const needsDimensions = [
+    'Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 
+    'Estação de trabalho Coletivas', 'Blocos e Meios-fios',
+    'Acessórios', 'Ecobag', 'Miniaturas', 'Itens de São João', 'Sacolas', 'Outros'
+  ].includes(sub);
   
   const isConjuntoAluno = sub === 'Cadeiras e mesa (conjunto aluno)';
   const isBlocos = sub === 'Blocos e Meios-fios';
