@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
-import PisciculturaBanner from './components/PisciculturaBanner';
 
 // Hook Customizado: Permite "Clicar e Arrastar" para rolar (Efeito Netflix)
 function useDraggableScroll() {
@@ -204,11 +203,12 @@ export default function App() {
     const cats = catalog
       .filter(item => item.type === 'product' && item.category)
       .map(item => item.category.trim());
-    return ['Todos', ...new Set(cats), 'Padaria'];
+    // Adicionada categoria especial Piscicultura
+    return ['Todos', ...new Set(cats), 'Padaria', 'Piscicultura'];
   }, [catalog]);
 
   const availableSubcategories = useMemo(() => {
-    if (selectedCategory === 'Todos' || selectedCategory === 'Padaria') return [];
+    if (selectedCategory === 'Todos' || selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura') return [];
     
     const subs = catalog
       .filter(item => item.type === 'product' && item.category?.trim() === selectedCategory && item.subcategory)
@@ -224,7 +224,19 @@ export default function App() {
   }, [catalog, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
-    return catalog.filter(item => {
+    // Objeto mock para preencher a visualização da categoria especial
+    const pisciculturaItem = {
+      id: 'piscicultura-special',
+      type: 'piscicultura',
+      title: 'Piscicultura Intensiva de Alta Performance',
+      description: 'Descubra o manual completo de implantação, manejo estrutural e controle de qualidade para cultivo sustentável de tilápias em tanques elevados de geomembrana.',
+      image: 'https://www.geomembrana.com.br/uploads/informacoes_posts/95/informacoes_fotos/thumb-800-0/25b20cfd51faf525afb9338d66d59382.jpg',
+      category: 'Piscicultura'
+    };
+
+    const fullCatalog = [...catalog, pisciculturaItem];
+
+    return fullCatalog.filter(item => {
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
         fuzzySearch(searchQuery, item.title) || 
@@ -240,7 +252,12 @@ export default function App() {
         return item.type === 'bakery' && matchesSearch;
       }
 
-      if (item.type === 'bakery') return false; 
+      if (selectedCategory === 'Piscicultura') {
+        return item.type === 'piscicultura' && matchesSearch;
+      }
+
+      // Exclui padaria e piscicultura da visão 'Todos' para se comportarem como categorias especiais exclusivas
+      if (item.type === 'bakery' || item.type === 'piscicultura') return false; 
       
       const itemCat = item.category?.trim();
       const itemSub = item.subcategory?.trim();
@@ -526,9 +543,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Banner Interativo da Piscicultura (Mudado para cá) */}
-        <PisciculturaBanner onViewDetails={() => setShowPdfModal(true)} />
-
         <section ref={productsRef} className="pt-12 relative pb-16">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
             <h3 className="font-serif text-4xl md:text-5xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
@@ -589,10 +603,12 @@ export default function App() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
           ) : (
-            <div className={`grid gap-4 md:gap-12 ${selectedCategory === 'Padaria' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
+            <div className={`grid gap-4 md:gap-12 ${(selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura') ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
               {filteredProducts.map(item => (
                 item.type === 'bakery' ? (
                   <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
+                ) : item.type === 'piscicultura' ? (
+                  <PisciculturaCard key={item.id} item={item} onViewDetails={() => setShowPdfModal(true)} />
                 ) : (
                   <ProductCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }} onImageClick={setFullscreenImage} />
                 )
@@ -673,7 +689,7 @@ export default function App() {
       <NotificationModal config={notify} onClose={() => setNotify(prev => ({ ...prev, isOpen: false }))} />
       <ConfirmDeleteModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} />
       
-      {/* NOVO MODAL DO PDF */}
+      {/* MODAL DO PDF */}
       <PdfPreviewModal isOpen={showPdfModal} onClose={() => setShowPdfModal(false)} />
     </div>
   );
@@ -968,6 +984,34 @@ const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
     {isCard && <button onClick={onDelete} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition border border-[#192d55] rounded-xl">Excluir</button>}
   </div>
 );
+
+// Novo Card de Piscicultura Especial
+const PisciculturaCard = ({ item, onViewDetails }) => {
+  return (
+    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
+      
+      <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative">
+        <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+      </div>
+      
+      <div className="p-4 md:p-6 flex-grow flex flex-col justify-between items-center text-center">
+        <div>
+          <h4 className="font-serif text-base md:text-xl font-bold text-gray-900 dark:text-white mb-2 md:mb-3 leading-tight">{item.title}</h4>
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-light mb-4">{item.description}</p>
+        </div>
+        
+        <div className="mt-auto w-full pt-3 md:pt-4 border-t border-gray-100 dark:border-slate-700">
+          <button 
+            onClick={onViewDetails}
+            className="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-bold uppercase tracking-widest text-[10px] md:text-xs px-6 py-2.5 rounded-sm transition-all shadow-md"
+          >
+            Ver Mais
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   const defaultImage = useMemo(() => {
