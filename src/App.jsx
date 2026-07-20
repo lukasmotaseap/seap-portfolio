@@ -57,7 +57,7 @@ const formatBRL = (value) => {
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
   about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administration, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
-  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
+  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores conditions para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
   cleaning: { img: "/limpeza_e_manutenção.jpg" }
 };
 
@@ -203,7 +203,6 @@ export default function App() {
     const cats = catalog
       .filter(item => item.type === 'product' && item.category)
       .map(item => item.category.trim());
-    // Adicionada categoria especial Piscicultura
     return ['Todos', ...new Set(cats), 'Padaria', 'Piscicultura'];
   }, [catalog]);
 
@@ -224,7 +223,6 @@ export default function App() {
   }, [catalog, selectedCategory]);
 
   const filteredProducts = useMemo(() => {
-    // Objeto mock para preencher a visualização da categoria especial
     const pisciculturaItem = {
       id: 'piscicultura-special',
       type: 'piscicultura',
@@ -256,7 +254,6 @@ export default function App() {
         return item.type === 'piscicultura' && matchesSearch;
       }
 
-      // Exclui padaria e piscicultura da visão 'Todos' para se comportarem como categorias especiais exclusivas
       if (item.type === 'bakery' || item.type === 'piscicultura') return false; 
       
       const itemCat = item.category?.trim();
@@ -500,7 +497,6 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-6 py-8 md:py-12 space-y-12 md:space-y-20">
         
-        {/* Seção 1: Excelência e Reintegração */}
         <section className="relative pt-8 pb-12 md:pt-12 md:pb-24 text-center border-b border-gray-200 dark:border-slate-700">
           <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4 md:mb-6">
             {sections.hero.title}
@@ -510,7 +506,6 @@ export default function App() {
           </p>
         </section>
 
-        {/* Seção 2: Quem somos nós */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
           <div className="order-2 md:order-1">
             <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8">
@@ -527,7 +522,6 @@ export default function App() {
           </div>
         </section>
 
-        {/* Seção 3: Trabalho com Dignidade */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center relative text-center md:text-left">
           <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[280px] sm:max-w-[400px] md:max-w-none mx-auto md:mx-0">
             <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-md" />
@@ -689,57 +683,34 @@ export default function App() {
       <NotificationModal config={notify} onClose={() => setNotify(prev => ({ ...prev, isOpen: false }))} />
       <ConfirmDeleteModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} />
       
-      {/* MODAL DO PDF */}
       <PdfPreviewModal isOpen={showPdfModal} onClose={() => setShowPdfModal(false)} />
     </div>
   );
 }
 
-// =====================================================================
-// COMPONENTES DE APOIO E MODAIS
-// =====================================================================
-
 const PdfPreviewModal = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
-
-  // IMPORTANTE: Substitua o valor desta variável pelo caminho real do seu PDF
-  // Exemplo: "/roteiro_piscicultura.pdf" (se estiver na pasta public do seu projeto React)
   const pdfUrl = "/Piscicultura_Intensiva.pdf"; 
 
   return (
     <div className="fixed inset-0 z-[300] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-2 md:p-6">
       <div className="bg-white dark:bg-slate-800 w-full max-w-5xl h-[95vh] md:h-[90vh] flex flex-col rounded-xl overflow-hidden shadow-2xl relative border border-gray-200 dark:border-slate-700">
-        
-        {/* Header / Ações */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 shrink-0">
           <div>
-            <h2 className="font-serif text-base md:text-xl font-bold text-[#192d55] dark:text-white">
-              Roteiro Técnico
-            </h2>
+            <h2 className="font-serif text-base md:text-xl font-bold text-[#192d55] dark:text-white">Roteiro Técnico</h2>
             <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">Piscicultura</p>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
-            <a 
-              href={pdfUrl} 
-              download 
-              className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] md:text-xs uppercase font-bold tracking-widest px-3 py-2 md:px-4 md:py-2 rounded-sm shadow-md transition-all flex items-center gap-2"
-            >
+            <a href={pdfUrl} download className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] md:text-xs uppercase font-bold tracking-widest px-3 py-2 md:px-4 md:py-2 rounded-sm shadow-md transition-all flex items-center gap-2">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
               <span className="hidden sm:inline">Baixar PDF</span>
             </a>
             <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-[#d12229] transition-colors ml-2">&times;</button>
           </div>
         </div>
-        
-        {/* Visualizador de PDF (Iframe Nativo) */}
         <div className="flex-grow w-full bg-gray-100 dark:bg-slate-900 relative">
-          <iframe 
-            src={`${pdfUrl}#view=FitH`} 
-            title="Pré-visualização do PDF Roteiro da Piscicultura" 
-            className="absolute inset-0 w-full h-full border-none"
-          />
+          <iframe src={`${pdfUrl}#view=FitH`} title="Pré-visualização do PDF Roteiro da Piscicultura" className="absolute inset-0 w-full h-full border-none" />
         </div>
-
       </div>
     </div>
   );
@@ -747,7 +718,6 @@ const PdfPreviewModal = ({ isOpen, onClose }) => {
 
 const NotificationModal = ({ config, onClose }) => {
   if (!config.isOpen) return null;
-
   let layoutClasses = 'border-green-600 bg-green-50 dark:bg-green-950/20';
   let titleColor = 'text-green-800 dark:text-green-400';
   let buttonStyle = 'bg-green-700 hover:bg-green-800';
@@ -788,12 +758,7 @@ const NotificationModal = ({ config, onClose }) => {
           </div>
         </div>
         <div className="mt-6 flex justify-end">
-          <button 
-            onClick={onClose} 
-            className={`px-5 py-2 text-xs font-bold uppercase tracking-wider text-white rounded-sm transition-colors shadow-sm ${buttonStyle}`}
-          >
-            Entendido
-          </button>
+          <button onClick={onClose} className={`px-5 py-2 text-xs font-bold uppercase tracking-wider text-white rounded-sm transition-colors shadow-sm ${buttonStyle}`}>Entendido</button>
         </div>
       </div>
     </div>
@@ -802,7 +767,6 @@ const NotificationModal = ({ config, onClose }) => {
 
 const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
-
   return (
     <div className="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-sm rounded-sm border-2 p-6 shadow-2xl bg-red-50 dark:bg-red-950/20 border-red-600 transition-all transform scale-100">
@@ -818,18 +782,8 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm }) => {
           </div>
         </div>
         <div className="mt-6 flex justify-end gap-3">
-          <button 
-            onClick={onClose} 
-            className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-[#d12229] hover:underline transition-colors shadow-none"
-          >
-            Cancelar
-          </button>
-          <button 
-            onClick={onConfirm} 
-            className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#d12229] hover:bg-red-800 rounded-sm transition-colors shadow-sm"
-          >
-            Excluir
-          </button>
+          <button onClick={onClose} className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-[#d12229] hover:underline transition-colors shadow-none">Cancelar</button>
+          <button onClick={onConfirm} className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#d12229] hover:bg-red-800 rounded-sm transition-colors shadow-sm">Excluir</button>
         </div>
       </div>
     </div>
@@ -838,22 +792,16 @@ const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm }) => {
 
 const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
   if (!isOpen) return null;
-
   const getStatusStyle = (status) => {
     switch (status) {
-      case 'aprovado':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
-      case 'bloqueado':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
-      default: 
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
+      case 'aprovado': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
+      case 'bloqueado': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
+      default: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
     }
   };
 
   const getRoleStyle = (role) => {
-    if (role === 'admin') {
-      return 'bg-[#c78c2b]/10 text-[#c78c2b] border border-[#c78c2b]/30';
-    }
+    if (role === 'admin') return 'bg-[#c78c2b]/10 text-[#c78c2b] border border-[#c78c2b]/30';
     return 'bg-blue-50 text-[#192d55] dark:bg-blue-900/20 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
   };
 
@@ -867,7 +815,6 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
           </div>
           <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-[#d12229] transition-colors">&times;</button>
         </div>
-        
         <div className="overflow-x-auto flex-grow p-6">
           <table className="w-full text-left border-collapse text-sm">
             <thead>
@@ -985,28 +932,19 @@ const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
   </div>
 );
 
-// Novo Card de Piscicultura Especial
 const PisciculturaCard = ({ item, onViewDetails }) => {
   return (
     <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
-      
       <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative">
         <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
       </div>
-      
       <div className="p-4 md:p-6 flex-grow flex flex-col justify-between items-center text-center">
         <div>
           <h4 className="font-serif text-base md:text-xl font-bold text-gray-900 dark:text-white mb-2 md:mb-3 leading-tight">{item.title}</h4>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-light mb-4">{item.description}</p>
         </div>
-        
         <div className="mt-auto w-full pt-3 md:pt-4 border-t border-gray-100 dark:border-slate-700">
-          <button 
-            onClick={onViewDetails}
-            className="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-bold uppercase tracking-widest text-[10px] md:text-xs px-6 py-2.5 rounded-sm transition-all shadow-md"
-          >
-            Ver Mais
-          </button>
+          <button onClick={onViewDetails} className="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-bold uppercase tracking-widest text-[10px] md:text-xs px-6 py-2.5 rounded-sm transition-all shadow-md">Ver Mais</button>
         </div>
       </div>
     </div>
@@ -1138,14 +1076,12 @@ const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
         </div>
       </div>
       
-      <div className="text-center bg-gray-50 dark:bg-slate-900 py-3 md:py-4 rounded-xl mt-auto border-t border-black/10 dark:border-white/10 flex flex-col items-center">
-        <span className="text-xs md:text-sm text-gray-500 uppercase tracking-widest block mb-1 md:mb-2">Investimento</span>
-        
-        <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif mt-1 md:mt-2">
-          <span className="text-sm md:text-base font-bold mt-1 md:mt-1.5 mr-1">R$</span>
-          <span className="text-3xl md:text-5xl font-bold leading-none">{intPrice}</span>
-          <span className="text-sm md:text-base font-bold mt-1 md:mt-1.5">,{decPrice}</span>
-          <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest ml-1.5 md:ml-2 mb-0.5 md:mb-1 self-end">/ {item.price_unit || 'pessoa'}</span>
+      <div className="text-center bg-gray-50 dark:bg-slate-900 py-3 md:py-4 rounded-xl mt-auto border-t border-gray-100 dark:border-slate-700">
+        <div className="flex items-start justify-center text-[#2d6a4f] dark:text-[#4ade80] font-serif">
+          <span className="text-xs font-bold mt-1 mr-1">R$</span>
+          <span className="text-2xl md:text-4xl font-bold leading-none">{intPrice}</span>
+          <span className="text-xs font-bold mt-1">,{decPrice}</span>
+          <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-2 self-end">/ {item.price_unit || 'pessoa'}</span>
         </div>
       </div>
     </div>

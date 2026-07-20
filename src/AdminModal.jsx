@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-// Nova estrutura exata fornecida por você
+// Nova estrutura com Artesanato e suas subcategorias inclusas
 const CATEGORY_STRUCTURE = {
   'Móveis': [
     'Mesas', 
