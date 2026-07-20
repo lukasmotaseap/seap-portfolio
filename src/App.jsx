@@ -3,7 +3,7 @@ import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
 
-// Hook Customizado: Permite "Clicar e Arrastar" para rolar (Efeito Netflix)
+// Hook Customizado: Permite "Clicar e Arrastar" para rolar
 function useDraggableScroll() {
   const ref = useRef(null);
   
@@ -56,8 +56,8 @@ const formatBRL = (value) => {
 
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
-  about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administration, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
-  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores conditions para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
+  about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administração, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
+  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
   cleaning: { img: "/limpeza_e_manutenção.jpg" }
 };
 
@@ -72,8 +72,9 @@ export default function App() {
   const [sections, setSections] = useState(initialSections);
   const [catalog, setCatalog] = useState([]);
 
-  // Estado para controlar a aba ativa do Hub de Apresentação
+  // Estados do Hub de Apresentação
   const [activePresentationTab, setActivePresentationTab] = useState('hero');
+  const [lastTabInteraction, setLastTabInteraction] = useState(Date.now());
 
   const [notify, setNotify] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
@@ -109,17 +110,38 @@ export default function App() {
     setNotify({ isOpen: true, type, title, message });
   };
 
+  // Efeito do Dark Mode
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
+  // Bloqueio de scroll do body em modais
   useEffect(() => {
     if (fullscreenImage || notify.isOpen || itemToDelete || showPdfModal) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'auto';
     
     return () => { document.body.style.overflow = 'auto'; };
   }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal]);
+
+  // Efeito de transição automática (Auto-play do Hub de Apresentação)
+  useEffect(() => {
+    const tabs = ['hero', 'about', 'dignity'];
+    const interval = setInterval(() => {
+      setActivePresentationTab(prev => {
+        const currentIndex = tabs.indexOf(prev);
+        return tabs[(currentIndex + 1) % tabs.length];
+      });
+    }, 10000); // 10 segundos
+    
+    return () => clearInterval(interval);
+  }, [lastTabInteraction]); // Reseta o timer toda vez que houver clique manual
+
+  // Manipulador de clique no tab
+  const handleTabChange = (id) => {
+    setActivePresentationTab(id);
+    setLastTabInteraction(Date.now()); // Grava o instante do clique para resetar o auto-play
+  };
 
   useEffect(() => {
     checkSession();
@@ -498,22 +520,22 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-8 md:py-12 space-y-12 md:space-y-20">
+      <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-12 md:space-y-20">
         
         {/* HUB INTERATIVO DE APRESENTAÇÃO */}
         <section className="relative pt-6 pb-10 md:pt-10 md:pb-16 border-b border-gray-200 dark:border-slate-700">
-          <div className="flex flex-wrap justify-center gap-2 md:gap-4 mb-8 md:mb-12">
+          <div className="flex flex-row justify-center items-stretch gap-1.5 sm:gap-3 md:gap-4 mb-8 md:mb-12 w-full max-w-2xl mx-auto">
             {[
               { id: 'hero', label: 'Apresentação' },
               { id: 'about', label: 'Quem Somos' },
-              { id: 'dignity', label: 'Trabalho com Dignidade' }
+              { id: 'dignity', label: 'Com Dignidade' }
             ].map(tab => (
               <button
                 key={tab.id}
-                onClick={() => setActivePresentationTab(tab.id)}
-                className={`px-5 py-2.5 text-xs md:text-sm uppercase tracking-widest font-bold rounded-sm transition-all duration-300 ${
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex-1 flex items-center justify-center text-center px-1 py-2 sm:px-3 sm:py-2.5 md:px-5 md:py-2.5 text-[8px] sm:text-[10px] md:text-sm uppercase tracking-widest font-bold rounded-sm transition-all duration-300 ${
                   activePresentationTab === tab.id 
-                    ? 'bg-[#192d55] text-white shadow-md scale-105' 
+                    ? 'bg-[#192d55] text-white shadow-md md:scale-105 transform scale-100' 
                     : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-slate-700 hover:border-[#192d55] dark:hover:border-white hover:text-[#192d55] dark:hover:text-white'
                 }`}
               >
@@ -522,30 +544,30 @@ export default function App() {
             ))}
           </div>
 
-          <div className="min-h-[350px] md:min-h-[400px] flex items-center justify-center transition-all duration-500">
+          <div className="min-h-[250px] md:min-h-[400px] flex items-center justify-center transition-all duration-500">
             {activePresentationTab === 'hero' && (
-              <div className="text-center max-w-4xl mx-auto animate-fade-in">
-                <h2 className="font-serif text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-4 md:mb-6">
+              <div className="text-center max-w-4xl mx-auto animate-fade-in px-2">
+                <h2 className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-3 md:mb-6">
                   {sections.hero.title}
                 </h2>
-                <p className="text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
+                <p className="text-sm sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
                   {sections.hero.subtitle}
                 </p>
               </div>
             )}
 
             {activePresentationTab === 'about' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center text-center md:text-left w-full animate-fade-in">
-                <div className="order-2 md:order-1">
-                  <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8">
+              <div className="flex flex-row gap-4 md:gap-16 items-center w-full animate-fade-in px-2 md:px-0">
+                <div className="w-[60%] md:w-1/2 order-1 text-left">
+                  <h3 className="font-serif text-lg sm:text-3xl md:text-5xl font-semibold text-[#d12229] mb-2 md:mb-8 leading-tight">
                     Quem somos nós
                   </h3>
-                  <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
+                  <p className="text-[9px] sm:text-sm md:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
                     {sections.about.text}
                   </p>
                 </div>
-                <div className="order-1 md:order-2 flex justify-center">
-                  <div className="aspect-[540/716] w-full max-w-[200px] sm:max-w-[250px] md:max-w-[300px]">
+                <div className="w-[40%] md:w-1/2 order-2 flex justify-center">
+                  <div className="aspect-[540/716] w-full max-w-[140px] sm:max-w-[250px] md:max-w-[300px]">
                     <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 shadow-xl rounded-sm" />
                   </div>
                 </div>
@@ -553,16 +575,18 @@ export default function App() {
             )}
 
             {activePresentationTab === 'dignity' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16 items-center text-center md:text-left w-full animate-fade-in">
-                <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[280px] sm:max-w-[400px] md:max-w-none mx-auto md:mx-0">
-                  <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-xl" />
-                  <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-xl" />
+              <div className="flex flex-row gap-4 md:gap-16 items-center w-full animate-fade-in px-2 md:px-0">
+                <div className="w-[40%] md:w-1/2 order-1 flex justify-center">
+                  <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[160px] sm:max-w-[400px] md:max-w-none">
+                    <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-xl" />
+                    <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-xl" />
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-serif text-3xl sm:text-4xl md:text-5xl font-semibold text-[#c78c2b] mb-4 md:mb-8">
+                <div className="w-[60%] md:w-1/2 order-2 text-left">
+                  <h3 className="font-serif text-lg sm:text-3xl md:text-5xl font-semibold text-[#c78c2b] mb-2 md:mb-8 leading-tight">
                     Trabalho com Dignidade
                   </h3>
-                  <p className="text-base sm:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
+                  <p className="text-[9px] sm:text-sm md:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
                     {sections.dignity.text}
                   </p>
                 </div>
