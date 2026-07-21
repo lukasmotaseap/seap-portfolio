@@ -63,6 +63,7 @@ const initialSections = {
 
 export default function App() {
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [showLimpezaPdfModal, setShowLimpezaPdfModal] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [userRole, setUserRole] = useState(null); 
   const [darkMode, setDarkMode] = useState(false);
@@ -118,11 +119,11 @@ export default function App() {
 
   // Bloqueio de scroll do body em modais
   useEffect(() => {
-    if (fullscreenImage || notify.isOpen || itemToDelete || showPdfModal) document.body.style.overflow = 'hidden';
+    if (fullscreenImage || notify.isOpen || itemToDelete || showPdfModal || showLimpezaPdfModal) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'auto';
     
     return () => { document.body.style.overflow = 'auto'; };
-  }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal]);
+  }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal]);
 
   // Efeito de transição automática (Auto-play do Hub de Apresentação)
   useEffect(() => {
@@ -228,11 +229,11 @@ export default function App() {
     const cats = catalog
       .filter(item => item.type === 'product' && item.category)
       .map(item => item.category.trim());
-    return ['Todos', ...new Set(cats), 'Padaria', 'Piscicultura'];
+    return ['Todos', ...new Set(cats), 'Padaria', 'Piscicultura', 'Limpeza e Manutenção'];
   }, [catalog]);
 
   const availableSubcategories = useMemo(() => {
-    if (selectedCategory === 'Todos' || selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura') return [];
+    if (selectedCategory === 'Todos' || selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura' || selectedCategory === 'Limpeza e Manutenção') return [];
     
     const subs = catalog
       .filter(item => item.type === 'product' && item.category?.trim() === selectedCategory && item.subcategory)
@@ -257,7 +258,16 @@ export default function App() {
       category: 'Piscicultura'
     };
 
-    const fullCatalog = [...catalog, pisciculturaItem];
+    const limpezaItem = {
+      id: 'limpeza-special',
+      type: 'limpeza',
+      title: 'Serviços de Limpeza e Manutenção',
+      description: 'Conheça nosso portfólio completo de serviços de limpeza e manutenção de ambientes, executados com excelência, cuidado e alto padrão de qualidade.',
+      image: '/limpeza_e_manutenção.jpg',
+      category: 'Limpeza e Manutenção'
+    };
+
+    const fullCatalog = [...catalog, pisciculturaItem, limpezaItem];
 
     return fullCatalog.filter(item => {
       const searchLower = searchQuery.toLowerCase();
@@ -279,7 +289,11 @@ export default function App() {
         return item.type === 'piscicultura' && matchesSearch;
       }
 
-      if (item.type === 'bakery' || item.type === 'piscicultura') return false; 
+      if (selectedCategory === 'Limpeza e Manutenção') {
+        return item.type === 'limpeza' && matchesSearch;
+      }
+
+      if (item.type === 'bakery' || item.type === 'piscicultura' || item.type === 'limpeza') return false; 
       
       const itemCat = item.category?.trim();
       const itemSub = item.subcategory?.trim();
@@ -528,7 +542,7 @@ export default function App() {
             {[
               { id: 'hero', label: 'Apresentação' },
               { id: 'about', label: 'Quem Somos' },
-              { id: 'dignity', label: 'Com Dignidade' }
+              { id: 'dignity', label: 'Programa' }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -655,12 +669,14 @@ export default function App() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
           ) : (
-            <div className={`grid gap-4 md:gap-12 ${(selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura') ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
+            <div className={`grid gap-4 md:gap-12 ${(selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura' || selectedCategory === 'Limpeza e Manutenção') ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
               {filteredProducts.map(item => (
                 item.type === 'bakery' ? (
                   <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
                 ) : item.type === 'piscicultura' ? (
                   <PisciculturaCard key={item.id} item={item} onViewDetails={() => setShowPdfModal(true)} />
+                ) : item.type === 'limpeza' ? (
+                  <PisciculturaCard key={item.id} item={item} onViewDetails={() => setShowLimpezaPdfModal(true)} />
                 ) : (
                   <ProductCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }} onImageClick={setFullscreenImage} />
                 )
@@ -741,22 +757,23 @@ export default function App() {
       <NotificationModal config={notify} onClose={() => setNotify(prev => ({ ...prev, isOpen: false }))} />
       <ConfirmDeleteModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} />
       
-      <PdfPreviewModal isOpen={showPdfModal} onClose={() => setShowPdfModal(false)} />
+      {/* Modals de Pré-visualização de PDF Dinâmicos */}
+      <PdfPreviewModal isOpen={showPdfModal} onClose={() => setShowPdfModal(false)} pdfUrl="/Piscicultura_Intensiva.pdf" title="Roteiro Técnico" subtitle="Piscicultura" />
+      <PdfPreviewModal isOpen={showLimpezaPdfModal} onClose={() => setShowLimpezaPdfModal(false)} pdfUrl="/limpeza_e_manutencao.pdf" title="Portfólio de Serviços" subtitle="Limpeza e Manutenção" />
     </div>
   );
 }
 
-const PdfPreviewModal = ({ isOpen, onClose }) => {
+const PdfPreviewModal = ({ isOpen, onClose, pdfUrl = "/Piscicultura_Intensiva.pdf", title = "Roteiro Técnico", subtitle = "Piscicultura" }) => {
   if (!isOpen) return null;
-  const pdfUrl = "/Piscicultura_Intensiva.pdf"; 
 
   return (
     <div className="fixed inset-0 z-[300] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-2 md:p-6">
       <div className="bg-white dark:bg-slate-800 w-full max-w-5xl h-[95vh] md:h-[90vh] flex flex-col rounded-xl overflow-hidden shadow-2xl relative border border-gray-200 dark:border-slate-700">
         <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 shrink-0">
           <div>
-            <h2 className="font-serif text-base md:text-xl font-bold text-[#192d55] dark:text-white">Roteiro Técnico</h2>
-            <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">Piscicultura</p>
+            <h2 className="font-serif text-base md:text-xl font-bold text-[#192d55] dark:text-white">{title}</h2>
+            <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">{subtitle}</p>
           </div>
           <div className="flex items-center gap-2 md:gap-4">
             <a href={pdfUrl} download className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] md:text-xs uppercase font-bold tracking-widest px-3 py-2 md:px-4 md:py-2 rounded-sm shadow-md transition-all flex items-center gap-2">
@@ -767,7 +784,7 @@ const PdfPreviewModal = ({ isOpen, onClose }) => {
           </div>
         </div>
         <div className="flex-grow w-full bg-gray-100 dark:bg-slate-900 relative">
-          <iframe src={`${pdfUrl}#view=FitH`} title="Pré-visualização do PDF Roteiro da Piscicultura" className="absolute inset-0 w-full h-full border-none" />
+          <iframe src={`${pdfUrl}#view=FitH`} title={`Pré-visualização do PDF ${title}`} className="absolute inset-0 w-full h-full border-none" />
         </div>
       </div>
     </div>
