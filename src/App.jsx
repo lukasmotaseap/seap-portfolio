@@ -82,7 +82,7 @@ export default function App() {
     '/oficina2.jpg',
     '/oficina3.jpg',
     '/oficina4.jpg',
-    '/oficina5.jpg'
+    '/oficina5.JPG'
   ], []);
   const [currentWorkshopIndex, setCurrentWorkshopIndex] = useState(0);
 
@@ -597,7 +597,7 @@ export default function App() {
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-xl">
              {/* Exemplo de imagem de fundo a ser preenchida: */}
              {/* <img src="/sua_imagem_de_fundo.jpg" alt="Background" className="w-full h-full object-cover opacity-30" /> */}
-             <img src="/public/oficina1.jpg" alt="Background" />
+             <img src="/oficina1.jpg" alt="Background" />
           </div>
 
           {/* Conteúdo do Hub */}
