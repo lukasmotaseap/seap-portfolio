@@ -87,7 +87,7 @@ export default function App() {
   const [currentWorkshopIndex, setCurrentWorkshopIndex] = useState(0);
 
   // Estados para a seção "Nossa Produção"
-  const [currentProductionPair, setCurrentProductionPair] = useState([]);
+  const [currentProductionItems, setCurrentProductionItems] = useState([]);
   const touchStartX = useRef(0);
 
   const [notify, setNotify] = useState({ isOpen: false, type: 'success', title: '', message: '' });
@@ -138,7 +138,7 @@ export default function App() {
     return () => { document.body.style.overflow = 'auto'; };
   }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal]);
 
-  // Efeito de transição automática do Hub de Apresentação
+  // Efeito de transição automática do Hub de Apresentação (Alterado para 15 segundos)
   useEffect(() => {
     const tabs = ['hero', 'about', 'dignity', 'production'];
     const interval = setInterval(() => {
@@ -146,7 +146,7 @@ export default function App() {
         const currentIndex = tabs.indexOf(prev);
         return tabs[(currentIndex + 1) % tabs.length];
       });
-    }, 10000); // 10 segundos
+    }, 15000); // 15 segundos
     
     return () => clearInterval(interval);
   }, [lastTabInteraction]);
@@ -160,18 +160,18 @@ export default function App() {
     return () => clearInterval(timer);
   }, [activePresentationTab, workshopImages.length]);
 
-  // Função para obter 2 produtos aleatórios do catálogo
-  const getRandomProductionPair = (items) => {
+  // Função para obter 4 produtos aleatórios do catálogo
+  const getRandomProductionItems = (items) => {
     const productsOnly = items.filter(i => i.type === 'product');
     if (productsOnly.length === 0) return [];
-    if (productsOnly.length <= 2) return productsOnly;
+    if (productsOnly.length <= 4) return productsOnly;
     const shuffled = [...productsOnly].sort(() => 0.5 - Math.random());
-    return [shuffled[0], shuffled[1]];
+    return [shuffled[0], shuffled[1], shuffled[2], shuffled[3]];
   };
 
-  const changeProductionPair = () => {
+  const changeProductionItems = () => {
     if (catalog.length > 0) {
-      setCurrentProductionPair(getRandomProductionPair(catalog));
+      setCurrentProductionItems(getRandomProductionItems(catalog));
     }
   };
 
@@ -179,12 +179,12 @@ export default function App() {
   useEffect(() => {
     if (activePresentationTab !== 'production') return;
 
-    if (currentProductionPair.length === 0 && catalog.length > 0) {
-      setCurrentProductionPair(getRandomProductionPair(catalog));
+    if (currentProductionItems.length === 0 && catalog.length > 0) {
+      setCurrentProductionItems(getRandomProductionItems(catalog));
     }
 
     const timer = setInterval(() => {
-      changeProductionPair();
+      changeProductionItems();
     }, 5000);
 
     return () => clearInterval(timer);
@@ -244,7 +244,7 @@ export default function App() {
       if (error) throw error;
       const loadedCatalog = data || [];
       setCatalog(loadedCatalog);
-      setCurrentProductionPair(getRandomProductionPair(loadedCatalog));
+      setCurrentProductionItems(getRandomProductionItems(loadedCatalog));
     } catch (error) {
       console.error("Erro ao carregar dados:", error.message);
       setCatalog([]);
@@ -592,181 +592,223 @@ export default function App() {
         
         {/* HUB INTERATIVO DE APRESENTAÇÃO */}
         <section className="relative pt-6 pb-10 md:pt-10 md:pb-16 border-b border-gray-200 dark:border-slate-700">
-          <div className="flex flex-row justify-center items-stretch gap-1.5 sm:gap-3 md:gap-4 mb-8 md:mb-12 w-full max-w-3xl mx-auto">
-            {[
-              { id: 'hero', label: 'Apresentação' },
-              { id: 'about', label: 'Quem Somos' },
-              { id: 'dignity', label: 'Programa' },
-              { id: 'production', label: 'Nossa Produção' }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex-1 flex items-center justify-center text-center px-1 py-2 sm:px-3 sm:py-2.5 md:px-5 md:py-2.5 text-[8px] sm:text-[10px] md:text-sm uppercase tracking-widest font-bold rounded-sm transition-all duration-300 ${
-                  activePresentationTab === tab.id 
-                    ? 'bg-[#192d55] text-white shadow-md md:scale-105 transform scale-100' 
-                    : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-slate-700 hover:border-[#192d55] dark:hover:border-white hover:text-[#192d55] dark:hover:text-white'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          
+          {/* Container de Imagem de Fundo (Adicione suas imagens aqui depois) */}
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-xl">
+             {/* Exemplo de imagem de fundo a ser preenchida: */}
+             {/* <img src="/sua_imagem_de_fundo.jpg" alt="Background" className="w-full h-full object-cover opacity-30" /> */}
           </div>
 
-          <div className="min-h-[250px] md:min-h-[400px] flex items-center justify-center transition-all duration-500">
-            {activePresentationTab === 'hero' && (
-              <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 w-full max-w-5xl mx-auto animate-fade-in px-2">
-                {/* Espaço à esquerda para Imagens das Oficinas (Formato 1:1) */}
-                <div className="w-full max-w-[220px] sm:max-w-[260px] md:w-1/3 shrink-0 flex flex-col items-center">
-                  <div className="aspect-square w-full relative overflow-hidden rounded-sm shadow-lg bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
-                    <img 
-                      src={workshopImages[currentWorkshopIndex]} 
-                      alt={`Oficina ${currentWorkshopIndex + 1}`} 
-                      className="w-full h-full object-cover transition-all duration-500"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between w-full mt-3 px-2">
-                    <button 
-                      onClick={() => {
-                        setCurrentWorkshopIndex(prev => (prev - 1 + workshopImages.length) % workshopImages.length);
-                        setLastTabInteraction(Date.now());
-                      }}
-                      className="p-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full transition-colors border border-gray-200 dark:border-slate-700"
-                      title="Anterior"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-                    </button>
-                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                      {currentWorkshopIndex + 1} / {workshopImages.length}
-                    </span>
-                    <button 
-                      onClick={() => {
-                        setCurrentWorkshopIndex(prev => (prev + 1) % workshopImages.length);
-                        setLastTabInteraction(Date.now());
-                      }}
-                      className="p-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full transition-colors border border-gray-200 dark:border-slate-700"
-                      title="Próxima"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-                    </button>
-                  </div>
-                </div>
+          {/* Conteúdo do Hub */}
+          <div className="relative z-10 w-full">
+            <div className="flex flex-row justify-center items-stretch gap-1.5 sm:gap-3 md:gap-4 mb-8 md:mb-12 w-full max-w-3xl mx-auto">
+              {[
+                { id: 'hero', label: 'Apresentação' },
+                { id: 'about', label: 'Quem Somos' },
+                { id: 'dignity', label: 'Programa' },
+                { id: 'production', label: 'Nossa Produção' }
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={`flex-1 flex items-center justify-center text-center px-1 py-2 sm:px-3 sm:py-2.5 md:px-5 md:py-2.5 text-[8px] sm:text-[10px] md:text-sm uppercase tracking-widest font-bold rounded-sm transition-all duration-300 ${
+                    activePresentationTab === tab.id 
+                      ? 'bg-[#192d55] text-white shadow-md md:scale-105 transform scale-100' 
+                      : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-slate-700 hover:border-[#192d55] dark:hover:border-white hover:text-[#192d55] dark:hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-                {/* Texto de Apresentação */}
-                <div className="text-center md:text-left flex-1">
-                  <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#192d55] dark:text-white mb-3 md:mb-6">
-                    {sections.hero.title}
-                  </h2>
-                  <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 font-light leading-relaxed">
-                    {sections.hero.subtitle}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activePresentationTab === 'about' && (
-              <div className="flex flex-row gap-4 md:gap-16 items-center w-full animate-fade-in px-2 md:px-0">
-                <div className="w-[60%] md:w-1/2 order-1 text-left">
-                  <h3 className="font-serif text-lg sm:text-3xl md:text-5xl font-semibold text-[#d12229] mb-2 md:mb-8 leading-tight">
-                    Quem somos nós
-                  </h3>
-                  <p className="text-[9px] sm:text-sm md:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
-                    {sections.about.text}
-                  </p>
-                </div>
-                <div className="w-[40%] md:w-1/2 order-2 flex justify-center">
-                  <div className="aspect-[540/716] w-full max-w-[140px] sm:max-w-[250px] md:max-w-[300px]">
-                    <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 shadow-xl rounded-sm" />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activePresentationTab === 'dignity' && (
-              <div className="flex flex-row gap-4 md:gap-16 items-center w-full animate-fade-in px-2 md:px-0">
-                <div className="w-[40%] md:w-1/2 order-1 flex justify-center">
-                  <div className="aspect-[1956/1505] overflow-hidden w-full max-w-[160px] sm:max-w-[400px] md:max-w-none">
-                    <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-sm shadow-xl" />
-                    <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-sm shadow-xl" />
-                  </div>
-                </div>
-                <div className="w-[60%] md:w-1/2 order-2 text-left">
-                  <h3 className="font-serif text-lg sm:text-3xl md:text-5xl font-semibold text-[#c78c2b] mb-2 md:mb-8 leading-tight">
-                    Trabalho com Dignidade
-                  </h3>
-                  <p className="text-[9px] sm:text-sm md:text-lg leading-relaxed md:leading-loose text-gray-700 dark:text-gray-300 font-light text-justify md:text-left">
-                    {sections.dignity.text}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {activePresentationTab === 'production' && (
-              <div className="w-full max-w-5xl mx-auto animate-fade-in px-2">
-                <h3 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-[#192d55] dark:text-white text-center mb-6">
-                  Nossa Produção
-                </h3>
-                {currentProductionPair.length === 0 ? (
-                  <div className="text-center py-10 text-gray-500 font-serif italic">
-                    Nenhum produto para exibição no momento.
-                  </div>
-                ) : (
-                  <div 
-                    className="relative flex items-center justify-between gap-2 md:gap-4"
-                    onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
-                    onTouchEnd={(e) => {
-                      const touchEndX = e.changedTouches[0].clientX;
-                      if (touchStartX.current - touchEndX > 40) {
-                        changeProductionPair();
-                        setLastTabInteraction(Date.now());
-                      } else if (touchEndX - touchStartX.current > 40) {
-                        changeProductionPair();
-                        setLastTabInteraction(Date.now());
-                      }
-                    }}
-                  >
-                    <button
-                      onClick={() => {
-                        changeProductionPair();
-                        setLastTabInteraction(Date.now());
-                      }}
-                      className="p-2 md:p-3 bg-white dark:bg-slate-800 hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
-                      title="Anterior"
-                    >
-                      <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-                      {currentProductionPair.map((item) => (
-                        <ProductCard
-                          key={item.id}
-                          item={item}
-                          isAdmin={isAdmin}
-                          onDelete={() => handleDeleteItem(item.id)}
-                          onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }}
-                          onImageClick={setFullscreenImage}
-                        />
-                      ))}
+            {/* Container com Efeito Vidro Embaçado (Glassmorphism) */}
+            <div className="min-h-[250px] md:min-h-[400px] flex items-center justify-center transition-all duration-500 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-white/40 dark:border-slate-700/50 shadow-xl rounded-2xl p-4 md:p-8">
+              
+              {activePresentationTab === 'hero' && (
+                <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 w-full max-w-5xl mx-auto animate-fade-in px-2">
+                  <div className="w-full max-w-[220px] sm:max-w-[260px] md:w-1/3 shrink-0 flex flex-col items-center">
+                    <div className="aspect-square w-full relative overflow-hidden rounded-xl shadow-lg bg-gray-100 dark:bg-slate-800 border border-white/30 dark:border-slate-700">
+                      <img 
+                        src={workshopImages[currentWorkshopIndex]} 
+                        alt={`Oficina ${currentWorkshopIndex + 1}`} 
+                        className="w-full h-full object-cover transition-all duration-500"
+                      />
                     </div>
-
-                    <button
-                      onClick={() => {
-                        changeProductionPair();
-                        setLastTabInteraction(Date.now());
-                      }}
-                      className="p-2 md:p-3 bg-white dark:bg-slate-800 hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
-                      title="Próxima"
-                    >
-                      <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
+                    <div className="flex items-center justify-between w-full mt-3 px-2">
+                      <button 
+                        onClick={() => {
+                          setCurrentWorkshopIndex(prev => (prev - 1 + workshopImages.length) % workshopImages.length);
+                          setLastTabInteraction(Date.now());
+                        }}
+                        className="p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full transition-colors border border-gray-200 dark:border-slate-700"
+                        title="Anterior"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                      </button>
+                      <span className="text-xs font-bold text-gray-700 dark:text-gray-300">
+                        {currentWorkshopIndex + 1} / {workshopImages.length}
+                      </span>
+                      <button 
+                        onClick={() => {
+                          setCurrentWorkshopIndex(prev => (prev + 1) % workshopImages.length);
+                          setLastTabInteraction(Date.now());
+                        }}
+                        className="p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full transition-colors border border-gray-200 dark:border-slate-700"
+                        title="Próxima"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-            )}
+
+                  <div className="text-center md:text-left flex-1">
+                    <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#192d55] dark:text-white mb-3 md:mb-6">
+                      {sections.hero.title}
+                    </h2>
+                    <p className="text-sm sm:text-base md:text-lg text-gray-800 dark:text-gray-200 font-light leading-relaxed drop-shadow-sm">
+                      {sections.hero.subtitle}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {activePresentationTab === 'about' && (
+                <div className="flex flex-col md:flex-row gap-6 md:gap-16 items-center w-full animate-fade-in px-4 md:px-0">
+                  <div className="w-full md:w-1/2 order-2 md:order-1 text-center md:text-left">
+                    <h3 className="font-serif text-2xl sm:text-3xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8 leading-tight">
+                      Quem somos nós
+                    </h3>
+                    <p className="text-[12px] sm:text-sm md:text-lg leading-relaxed md:leading-loose text-gray-800 dark:text-gray-200 font-light text-justify md:text-left drop-shadow-sm">
+                      {sections.about.text}
+                    </p>
+                  </div>
+                  <div className="w-full md:w-1/2 order-1 md:order-2 flex justify-center">
+                    <div className="aspect-[540/716] w-full max-w-[140px] sm:max-w-[200px] md:max-w-[300px]">
+                      <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 shadow-xl rounded-xl" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activePresentationTab === 'dignity' && (
+                <div className="w-full animate-fade-in px-2 md:px-4">
+                  {/* Visão Mobile com Float e texto contornando */}
+                  <div className="block md:hidden text-justify">
+                    <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-[#c78c2b] mb-5 text-center">
+                      Trabalho com Dignidade
+                    </h3>
+                    <div className="float-left mr-4 mb-2 w-[180px] sm:w-[220px]">
+                      <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover rounded-xl shadow-lg border border-white/30" />
+                      <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover rounded-xl shadow-lg border border-slate-700" />
+                    </div>
+                    <p className="text-[12px] sm:text-sm leading-relaxed text-gray-800 dark:text-gray-200 font-light inline drop-shadow-sm">
+                      {sections.dignity.text}
+                    </p>
+                  </div>
+
+                  {/* Visão Desktop (Padrão) */}
+                  <div className="hidden md:flex md:flex-row md:gap-16 items-center w-full">
+                    <div className="w-1/2 order-1 flex justify-center">
+                      <div className="aspect-[1956/1505] overflow-hidden w-full rounded-xl shadow-xl border border-white/30 dark:border-slate-700/50">
+                        <img src="/Trabalho_com_Dignidade_claro.png" alt="Programa Trabalho com Dignidade" className="block dark:hidden w-full h-auto object-cover" />
+                        <img src="/Trabalho_com_Dignidade_escuro.png" alt="Programa Trabalho com Dignidade" className="hidden dark:block w-full h-auto object-cover" />
+                      </div>
+                    </div>
+                    <div className="w-1/2 order-2 text-left">
+                      <h3 className="font-serif text-5xl font-semibold text-[#c78c2b] mb-8 leading-tight">
+                        Trabalho com Dignidade
+                      </h3>
+                      <p className="text-lg leading-loose text-gray-800 dark:text-gray-200 font-light drop-shadow-sm">
+                        {sections.dignity.text}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activePresentationTab === 'production' && (
+                <div className="w-full mx-auto animate-fade-in px-2">
+                  <h3 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-[#192d55] dark:text-white text-center mb-6 drop-shadow-sm">
+                    Nossa Produção
+                  </h3>
+                  {currentProductionItems.length === 0 ? (
+                    <div className="text-center py-10 text-gray-600 dark:text-gray-300 font-serif italic">
+                      Nenhum produto para exibição no momento.
+                    </div>
+                  ) : (
+                    <div 
+                      className="relative flex items-center justify-between gap-2 md:gap-6"
+                      onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                      onTouchEnd={(e) => {
+                        const touchEndX = e.changedTouches[0].clientX;
+                        if (touchStartX.current - touchEndX > 40) {
+                          changeProductionItems();
+                          setLastTabInteraction(Date.now());
+                        } else if (touchEndX - touchStartX.current > 40) {
+                          changeProductionItems();
+                          setLastTabInteraction(Date.now());
+                        }
+                      }}
+                    >
+                      <button
+                        onClick={() => {
+                          changeProductionItems();
+                          setLastTabInteraction(Date.now());
+                        }}
+                        className="p-2 md:p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
+                        title="Anterior"
+                      >
+                        <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                        </svg>
+                      </button>
+
+                      {/* Visão Mobile: 1 Card Apenas */}
+                      <div className="grid grid-cols-1 gap-4 flex-1 md:hidden">
+                        {currentProductionItems.slice(0, 1).map((item) => (
+                          <ProductCard
+                            key={item.id}
+                            item={item}
+                            isAdmin={isAdmin}
+                            onDelete={() => handleDeleteItem(item.id)}
+                            onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }}
+                            onImageClick={setFullscreenImage}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Visão Desktop: 4 Cards */}
+                      <div className="hidden md:grid md:grid-cols-4 gap-4 flex-1">
+                        {currentProductionItems.map((item) => (
+                          <ProductCard
+                            key={item.id}
+                            item={item}
+                            isAdmin={isAdmin}
+                            onDelete={() => handleDeleteItem(item.id)}
+                            onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }}
+                            onImageClick={setFullscreenImage}
+                          />
+                        ))}
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          changeProductionItems();
+                          setLastTabInteraction(Date.now());
+                        }}
+                        className="p-2 md:p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
+                        title="Próxima"
+                      >
+                        <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </section>
 
@@ -917,6 +959,7 @@ export default function App() {
   );
 }
 
+// RESTANTE DOS COMPONENTES (Inalterados, garantindo a funcionalidade)
 const PdfPreviewModal = ({ isOpen, onClose, pdfUrl = "/Piscicultura_Intensiva.pdf", title = "Roteiro Técnico", subtitle = "Piscicultura" }) => {
   if (!isOpen) return null;
 
