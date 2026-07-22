@@ -57,8 +57,7 @@ const formatBRL = (value) => {
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
   about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão e tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administração, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
-  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" },
-  cleaning: { img: "/limpeza_e_manutenção.jpg" }
+  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" }
 };
 
 export default function App() {
@@ -76,6 +75,20 @@ export default function App() {
   // Estados do Hub de Apresentação
   const [activePresentationTab, setActivePresentationTab] = useState('hero');
   const [lastTabInteraction, setLastTabInteraction] = useState(Date.now());
+
+  // Estados para imagens das Oficinas (Seção Excelência e Reintegração)
+  const workshopImages = useMemo(() => [
+    '/oficina1.jpg',
+    '/oficina2.jpg',
+    '/oficina3.jpg',
+    '/oficina4.jpg',
+    '/oficina5.jpg'
+  ], []);
+  const [currentWorkshopIndex, setCurrentWorkshopIndex] = useState(0);
+
+  // Estados para a seção "Nossa Produção"
+  const [currentProductionPair, setCurrentProductionPair] = useState([]);
+  const touchStartX = useRef(0);
 
   const [notify, setNotify] = useState({ isOpen: false, type: 'success', title: '', message: '' });
 
@@ -125,9 +138,9 @@ export default function App() {
     return () => { document.body.style.overflow = 'auto'; };
   }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal]);
 
-  // Efeito de transição automática (Auto-play do Hub de Apresentação)
+  // Efeito de transição automática do Hub de Apresentação
   useEffect(() => {
-    const tabs = ['hero', 'about', 'dignity'];
+    const tabs = ['hero', 'about', 'dignity', 'production'];
     const interval = setInterval(() => {
       setActivePresentationTab(prev => {
         const currentIndex = tabs.indexOf(prev);
@@ -136,12 +149,51 @@ export default function App() {
     }, 10000); // 10 segundos
     
     return () => clearInterval(interval);
-  }, [lastTabInteraction]); // Reseta o timer toda vez que houver clique manual
+  }, [lastTabInteraction]);
+
+  // Timer do Carrossel de Oficinas (2.5 segundos)
+  useEffect(() => {
+    if (activePresentationTab !== 'hero') return;
+    const timer = setInterval(() => {
+      setCurrentWorkshopIndex(prev => (prev + 1) % workshopImages.length);
+    }, 2500);
+    return () => clearInterval(timer);
+  }, [activePresentationTab, workshopImages.length]);
+
+  // Função para obter 2 produtos aleatórios do catálogo
+  const getRandomProductionPair = (items) => {
+    const productsOnly = items.filter(i => i.type === 'product');
+    if (productsOnly.length === 0) return [];
+    if (productsOnly.length <= 2) return productsOnly;
+    const shuffled = [...productsOnly].sort(() => 0.5 - Math.random());
+    return [shuffled[0], shuffled[1]];
+  };
+
+  const changeProductionPair = () => {
+    if (catalog.length > 0) {
+      setCurrentProductionPair(getRandomProductionPair(catalog));
+    }
+  };
+
+  // Timer da Seção "Nossa Produção" (5 segundos)
+  useEffect(() => {
+    if (activePresentationTab !== 'production') return;
+
+    if (currentProductionPair.length === 0 && catalog.length > 0) {
+      setCurrentProductionPair(getRandomProductionPair(catalog));
+    }
+
+    const timer = setInterval(() => {
+      changeProductionPair();
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [activePresentationTab, catalog]);
 
   // Manipulador de clique no tab
   const handleTabChange = (id) => {
     setActivePresentationTab(id);
-    setLastTabInteraction(Date.now()); // Grava o instante do clique para resetar o auto-play
+    setLastTabInteraction(Date.now());
   };
 
   useEffect(() => {
@@ -190,7 +242,9 @@ export default function App() {
         .order('title', { ascending: true });
 
       if (error) throw error;
-      setCatalog(data || []);
+      const loadedCatalog = data || [];
+      setCatalog(loadedCatalog);
+      setCurrentProductionPair(getRandomProductionPair(loadedCatalog));
     } catch (error) {
       console.error("Erro ao carregar dados:", error.message);
       setCatalog([]);
@@ -538,11 +592,12 @@ export default function App() {
         
         {/* HUB INTERATIVO DE APRESENTAÇÃO */}
         <section className="relative pt-6 pb-10 md:pt-10 md:pb-16 border-b border-gray-200 dark:border-slate-700">
-          <div className="flex flex-row justify-center items-stretch gap-1.5 sm:gap-3 md:gap-4 mb-8 md:mb-12 w-full max-w-2xl mx-auto">
+          <div className="flex flex-row justify-center items-stretch gap-1.5 sm:gap-3 md:gap-4 mb-8 md:mb-12 w-full max-w-3xl mx-auto">
             {[
               { id: 'hero', label: 'Apresentação' },
               { id: 'about', label: 'Quem Somos' },
-              { id: 'dignity', label: 'Programa' }
+              { id: 'dignity', label: 'Programa' },
+              { id: 'production', label: 'Nossa Produção' }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -560,13 +615,52 @@ export default function App() {
 
           <div className="min-h-[250px] md:min-h-[400px] flex items-center justify-center transition-all duration-500">
             {activePresentationTab === 'hero' && (
-              <div className="text-center max-w-4xl mx-auto animate-fade-in px-2">
-                <h2 className="font-serif text-2xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#192d55] dark:text-white mb-3 md:mb-6">
-                  {sections.hero.title}
-                </h2>
-                <p className="text-sm sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 font-light leading-relaxed">
-                  {sections.hero.subtitle}
-                </p>
+              <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 w-full max-w-5xl mx-auto animate-fade-in px-2">
+                {/* Espaço à esquerda para Imagens das Oficinas (Formato 1:1) */}
+                <div className="w-full max-w-[220px] sm:max-w-[260px] md:w-1/3 shrink-0 flex flex-col items-center">
+                  <div className="aspect-square w-full relative overflow-hidden rounded-sm shadow-lg bg-gray-100 dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
+                    <img 
+                      src={workshopImages[currentWorkshopIndex]} 
+                      alt={`Oficina ${currentWorkshopIndex + 1}`} 
+                      className="w-full h-full object-cover transition-all duration-500"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between w-full mt-3 px-2">
+                    <button 
+                      onClick={() => {
+                        setCurrentWorkshopIndex(prev => (prev - 1 + workshopImages.length) % workshopImages.length);
+                        setLastTabInteraction(Date.now());
+                      }}
+                      className="p-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full transition-colors border border-gray-200 dark:border-slate-700"
+                      title="Anterior"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                      {currentWorkshopIndex + 1} / {workshopImages.length}
+                    </span>
+                    <button 
+                      onClick={() => {
+                        setCurrentWorkshopIndex(prev => (prev + 1) % workshopImages.length);
+                        setLastTabInteraction(Date.now());
+                      }}
+                      className="p-1.5 bg-gray-100 dark:bg-slate-800 hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full transition-colors border border-gray-200 dark:border-slate-700"
+                      title="Próxima"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Texto de Apresentação */}
+                <div className="text-center md:text-left flex-1">
+                  <h2 className="font-serif text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#192d55] dark:text-white mb-3 md:mb-6">
+                    {sections.hero.title}
+                  </h2>
+                  <p className="text-sm sm:text-base md:text-lg text-gray-600 dark:text-gray-400 font-light leading-relaxed">
+                    {sections.hero.subtitle}
+                  </p>
+                </div>
               </div>
             )}
 
@@ -604,6 +698,73 @@ export default function App() {
                     {sections.dignity.text}
                   </p>
                 </div>
+              </div>
+            )}
+
+            {activePresentationTab === 'production' && (
+              <div className="w-full max-w-5xl mx-auto animate-fade-in px-2">
+                <h3 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-[#192d55] dark:text-white text-center mb-6">
+                  Nossa Produção
+                </h3>
+                {currentProductionPair.length === 0 ? (
+                  <div className="text-center py-10 text-gray-500 font-serif italic">
+                    Nenhum produto para exibição no momento.
+                  </div>
+                ) : (
+                  <div 
+                    className="relative flex items-center justify-between gap-2 md:gap-4"
+                    onTouchStart={(e) => { touchStartX.current = e.touches[0].clientX; }}
+                    onTouchEnd={(e) => {
+                      const touchEndX = e.changedTouches[0].clientX;
+                      if (touchStartX.current - touchEndX > 40) {
+                        changeProductionPair();
+                        setLastTabInteraction(Date.now());
+                      } else if (touchEndX - touchStartX.current > 40) {
+                        changeProductionPair();
+                        setLastTabInteraction(Date.now());
+                      }
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        changeProductionPair();
+                        setLastTabInteraction(Date.now());
+                      }}
+                      className="p-2 md:p-3 bg-white dark:bg-slate-800 hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
+                      title="Anterior"
+                    >
+                      <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                      {currentProductionPair.map((item) => (
+                        <ProductCard
+                          key={item.id}
+                          item={item}
+                          isAdmin={isAdmin}
+                          onDelete={() => handleDeleteItem(item.id)}
+                          onEdit={() => { setProductToEdit(item); setIsProductModalOpen(true); }}
+                          onImageClick={setFullscreenImage}
+                        />
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        changeProductionPair();
+                        setLastTabInteraction(Date.now());
+                      }}
+                      className="p-2 md:p-3 bg-white dark:bg-slate-800 hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
+                      title="Próxima"
+                    >
+                      <svg className="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -685,14 +846,6 @@ export default function App() {
           )}
         </section>
       </main>
-
-      <section className="relative mt-8">
-          <div className="w-full aspect-[1749/1241] bg-gray-100 dark:bg-gray-800 border-y border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden">
-            {sections.cleaning.img ? (
-              <img src={sections.cleaning.img} alt="Limpeza" className="w-full h-full object-cover opacity-80 mix-blend-multiply dark:mix-blend-screen" />
-            ) : <span className="text-gray-400 font-serif italic">Espaço reservado</span>}
-          </div>
-      </section>
 
       <footer className="bg-[#0f172a] text-white pt-20 pb-10 border-t-4 border-[#c78c2b]">
         <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
