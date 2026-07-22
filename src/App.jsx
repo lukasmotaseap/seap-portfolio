@@ -138,7 +138,7 @@ export default function App() {
     return () => { document.body.style.overflow = 'auto'; };
   }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal]);
 
-  // Efeito de transição automática do Hub de Apresentação (Alterado para 15 segundos)
+  // Efeito de transição automática do Hub de Apresentação (15 segundos)
   useEffect(() => {
     const tabs = ['hero', 'about', 'dignity', 'production'];
     const interval = setInterval(() => {
@@ -591,18 +591,20 @@ export default function App() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-12 md:space-y-20">
         
         {/* HUB INTERATIVO DE APRESENTAÇÃO */}
-        <section className="relative pt-6 pb-10 md:pt-10 md:pb-16 border-b border-gray-200 dark:border-slate-700">
+        <section className="relative px-3 sm:px-6 md:px-10 pt-6 pb-10 md:pt-12 md:pb-20 border-b border-gray-200 dark:border-slate-700 rounded-2xl md:rounded-3xl overflow-hidden">
           
-          {/* Container de Imagem de Fundo (Adicione suas imagens aqui depois) */}
-          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-xl">
-             {/* Exemplo de imagem de fundo a ser preenchida: */}
-             {/* <img src="/sua_imagem_de_fundo.jpg" alt="Background" className="w-full h-full object-cover opacity-30" /> */}
-             <img src="/background2.JPG" alt="Background" />
+          {/* Container de Imagem de Fundo Responsivo */}
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-2xl md:rounded-3xl">
+             <img 
+               src="/background2.JPG" 
+               alt="Background" 
+               className="w-full h-full object-cover opacity-30 dark:opacity-20"
+             />
           </div>
 
-          {/* Conteúdo do Hub */}
+          {/* Conteúdo do Hub com Respiro Adaptável */}
           <div className="relative z-10 w-full">
-            <div className="flex flex-row justify-center items-stretch gap-1.5 sm:gap-3 md:gap-4 mb-8 md:mb-12 w-full max-w-3xl mx-auto">
+            <div className="flex flex-row justify-center items-stretch gap-2 sm:gap-3 md:gap-4 mb-6 md:mb-10 w-full max-w-3xl mx-auto px-2 sm:px-4 pt-2 sm:pt-4">
               {[
                 { id: 'hero', label: 'Apresentação' },
                 { id: 'about', label: 'Quem Somos' },
@@ -612,10 +614,10 @@ export default function App() {
                 <button
                   key={tab.id}
                   onClick={() => handleTabChange(tab.id)}
-                  className={`flex-1 flex items-center justify-center text-center px-1 py-2 sm:px-3 sm:py-2.5 md:px-5 md:py-2.5 text-[8px] sm:text-[10px] md:text-sm uppercase tracking-widest font-bold rounded-sm transition-all duration-300 ${
+                  className={`flex-1 flex items-center justify-center text-center px-2 py-2.5 sm:px-4 sm:py-3 md:px-6 md:py-3 text-[9px] sm:text-xs md:text-sm uppercase tracking-widest font-bold rounded-lg transition-all duration-300 shadow-sm ${
                     activePresentationTab === tab.id 
-                      ? 'bg-[#192d55] text-white shadow-md md:scale-105 transform scale-100' 
-                      : 'bg-gray-50 dark:bg-slate-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-slate-700 hover:border-[#192d55] dark:hover:border-white hover:text-[#192d55] dark:hover:text-white'
+                      ? 'bg-[#192d55] text-white shadow-lg md:scale-105 transform scale-100 ring-2 ring-white/50' 
+                      : 'bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm text-gray-700 dark:text-gray-300 border border-gray-200/80 dark:border-slate-700/80 hover:border-[#192d55] dark:hover:border-white hover:text-[#192d55] dark:hover:text-white'
                   }`}
                 >
                   {tab.label}
@@ -623,8 +625,8 @@ export default function App() {
               ))}
             </div>
 
-            {/* Container com Efeito Vidro Embaçado (Glassmorphism) */}
-            <div className="min-h-[250px] md:min-h-[400px] flex items-center justify-center transition-all duration-500 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border border-white/40 dark:border-slate-700/50 shadow-xl rounded-2xl p-4 md:p-8">
+            {/* Container com Efeito Vidro Embaçado (Glassmorphism) e Respiro Interno */}
+            <div className="min-h-[280px] md:min-h-[420px] flex items-center justify-center transition-all duration-500 bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/50 dark:border-slate-700/60 shadow-2xl rounded-2xl p-5 sm:p-8 md:p-12 max-w-6xl mx-auto">
               
               {activePresentationTab === 'hero' && (
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-10 w-full max-w-5xl mx-auto animate-fade-in px-2">
@@ -675,18 +677,36 @@ export default function App() {
               )}
 
               {activePresentationTab === 'about' && (
-                <div className="flex flex-col md:flex-row gap-6 md:gap-16 items-center w-full animate-fade-in px-4 md:px-0">
-                  <div className="w-full md:w-1/2 order-2 md:order-1 text-center md:text-left">
-                    <h3 className="font-serif text-2xl sm:text-3xl md:text-5xl font-semibold text-[#d12229] mb-4 md:mb-8 leading-tight">
+                <div className="w-full animate-fade-in px-2 md:px-4">
+                  {/* Visão Mobile com Float e texto contornando a imagem */}
+                  <div className="block md:hidden text-justify">
+                    <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-[#d12229] mb-4 text-center">
                       Quem somos nós
                     </h3>
-                    <p className="text-[12px] sm:text-sm md:text-lg leading-relaxed md:leading-loose text-gray-800 dark:text-gray-200 font-light text-justify md:text-left drop-shadow-sm">
+                    <div className="float-left mr-4 mb-2 w-[120px] sm:w-[150px]">
+                      <div className="aspect-[540/716] w-full">
+                        <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 shadow-xl rounded-xl" />
+                      </div>
+                    </div>
+                    <p className="text-[12px] sm:text-sm leading-relaxed text-gray-800 dark:text-gray-200 font-light inline drop-shadow-sm">
                       {sections.about.text}
                     </p>
                   </div>
-                  <div className="w-full md:w-1/2 order-1 md:order-2 flex justify-center">
-                    <div className="aspect-[540/716] w-full max-w-[140px] sm:max-w-[200px] md:max-w-[300px]">
-                      <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 shadow-xl rounded-xl" />
+
+                  {/* Visão Desktop (Padrão) */}
+                  <div className="hidden md:flex md:flex-row md:gap-16 items-center w-full">
+                    <div className="w-1/2 order-1 text-left">
+                      <h3 className="font-serif text-3xl md:text-5xl font-semibold text-[#d12229] mb-8 leading-tight">
+                        Quem somos nós
+                      </h3>
+                      <p className="text-lg leading-loose text-gray-800 dark:text-gray-200 font-light drop-shadow-sm">
+                        {sections.about.text}
+                      </p>
+                    </div>
+                    <div className="w-1/2 order-2 flex justify-center">
+                      <div className="aspect-[540/716] w-full max-w-[300px]">
+                        <img src={sections.about.img} alt="Quem somos" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 shadow-xl rounded-xl" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -960,7 +980,6 @@ export default function App() {
   );
 }
 
-// RESTANTE DOS COMPONENTES (Inalterados, garantindo a funcionalidade)
 const PdfPreviewModal = ({ isOpen, onClose, pdfUrl = "/Piscicultura_Intensiva.pdf", title = "Roteiro Técnico", subtitle = "Piscicultura" }) => {
   if (!isOpen) return null;
 
