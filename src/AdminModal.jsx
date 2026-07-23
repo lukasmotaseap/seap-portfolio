@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 
-// Nova estrutura com Artesanato e suas subcategorias inclusas
 const CATEGORY_STRUCTURE = {
   'Móveis': [
     'Mesas', 
@@ -16,8 +15,8 @@ const CATEGORY_STRUCTURE = {
     'Cadeiras e mesa (conjunto aluno)', 
     'Conjuntos de fardamentos de colégio'
   ],
-  'Camisetas e Uniformes': [
-    'Camisetas e Uniformes'
+  'Malharia': [
+    'Malharia',
   ],
   'Blocos e Meios-fios': [
     'Blocos e Meios-fios'
