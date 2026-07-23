@@ -146,12 +146,25 @@ export default function App() {
     return () => clearInterval(timer);
   }, [activePresentationTab, workshopImages.length]);
 
-  // Função para obter 4 produtos aleatórios do catálogo
+  // Função para obter produtos aleatórios da mesma categoria
   const getRandomProductionItems = (items) => {
     const productsOnly = items.filter(i => i.type === 'product');
     if (productsOnly.length === 0) return [];
-    if (productsOnly.length <= 4) return productsOnly;
-    const shuffled = [...productsOnly].sort(() => 0.5 - Math.random());
+
+    const categories = [...new Set(productsOnly.filter(i => i.category).map(i => i.category.trim()))];
+    
+    if (categories.length === 0) {
+      if (productsOnly.length <= 4) return productsOnly;
+      const shuffled = [...productsOnly].sort(() => 0.5 - Math.random());
+      return [shuffled[0], shuffled[1], shuffled[2], shuffled[3]];
+    }
+
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    const categoryProducts = productsOnly.filter(i => i.category && i.category.trim() === randomCategory);
+
+    if (categoryProducts.length <= 4) return categoryProducts;
+    
+    const shuffled = [...categoryProducts].sort(() => 0.5 - Math.random());
     return [shuffled[0], shuffled[1], shuffled[2], shuffled[3]];
   };
 
@@ -1348,7 +1361,7 @@ const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
 
   return (
     <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-5 md:p-8">
-      {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onDelete} onEdit={onEdit} />}
+      {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onEdit} onEdit={onEdit} />}
       <div className="text-center mb-6 md:mb-8 border-b border-gray-100 dark:border-slate-700 pb-4 md:pb-6">
          <span className="text-[#c78c2b] text-[10px] md:text-xs font-bold uppercase tracking-widest block mb-1 md:mb-2">Serviço de Padaria</span>
          <h4 className="font-serif text-lg md:text-2xl font-bold text-gray-900 dark:text-white leading-tight">{item.title}</h4>
