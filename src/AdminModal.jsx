@@ -31,6 +31,9 @@ const CATEGORY_STRUCTURE = {
     'Itens de São João',
     'Sacolas',
     'Outros'
+  ],
+  'Marchetaria': [
+    'Marchetaria'
   ]
 };
 

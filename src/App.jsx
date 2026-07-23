@@ -184,7 +184,7 @@ export default function App() {
 
     const timer = setInterval(() => {
       changeProductionItems();
-    }, 5000);
+    }, 10000);
 
     return () => clearInterval(timer);
   }, [activePresentationTab, catalog]);
