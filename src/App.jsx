@@ -74,7 +74,6 @@ export default function App() {
 
   // Estados do Hub de Apresentação
   const [activePresentationTab, setActivePresentationTab] = useState('hero');
-  const [lastTabInteraction, setLastTabInteraction] = useState(Date.now());
 
   // Estados para imagens das Oficinas (Seção Excelência e Reintegração)
   const workshopImages = useMemo(() => [
@@ -138,19 +137,6 @@ export default function App() {
     return () => { document.body.style.overflow = 'auto'; };
   }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal]);
 
-  // Efeito de transição automática do Hub de Apresentação (15 segundos)
-  useEffect(() => {
-    const tabs = ['hero', 'about', 'dignity', 'production'];
-    const interval = setInterval(() => {
-      setActivePresentationTab(prev => {
-        const currentIndex = tabs.indexOf(prev);
-        return tabs[(currentIndex + 1) % tabs.length];
-      });
-    }, 15000); // 15 segundos
-    
-    return () => clearInterval(interval);
-  }, [lastTabInteraction]);
-
   // Timer do Carrossel de Oficinas (2.5 segundos)
   useEffect(() => {
     if (activePresentationTab !== 'hero') return;
@@ -193,7 +179,6 @@ export default function App() {
   // Manipulador de clique no tab
   const handleTabChange = (id) => {
     setActivePresentationTab(id);
-    setLastTabInteraction(Date.now());
   };
 
   useEffect(() => {
@@ -283,14 +268,29 @@ export default function App() {
     const cats = catalog
       .filter(item => item.type === 'product' && item.category)
       .map(item => item.category.trim());
-    return ['Todos', ...new Set(cats), 'Padaria', 'Piscicultura', 'Limpeza e Manutenção'];
+    
+    // Configura os botões: Oculta antigos "camisetas" e garante o botão "Malharia"
+    const catSet = new Set(cats);
+    catSet.delete('camisetas e uniformes');
+    catSet.delete('Camisetas e uniformes');
+    catSet.add('Malharia');
+    
+    return ['Todos', ...catSet, 'Padaria', 'Piscicultura', 'Limpeza e Manutenção'];
   }, [catalog]);
 
   const availableSubcategories = useMemo(() => {
     if (selectedCategory === 'Todos' || selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura' || selectedCategory === 'Limpeza e Manutenção') return [];
     
+    // Tratativa de compatibilidade de legados: se escolheu Malharia, procura por malharia OU antigos cadastros.
     const subs = catalog
-      .filter(item => item.type === 'product' && item.category?.trim() === selectedCategory && item.subcategory)
+      .filter(item => {
+        if (item.type !== 'product' || !item.subcategory) return false;
+        const cat = item.category?.trim();
+        if (selectedCategory === 'Malharia') {
+          return cat === 'Malharia' || cat.toLowerCase() === 'camisetas e uniformes';
+        }
+        return cat === selectedCategory;
+      })
       .map(item => item.subcategory.trim());
       
     const uniqueSubs = [...new Set(subs)];
@@ -352,7 +352,16 @@ export default function App() {
       const itemCat = item.category?.trim();
       const itemSub = item.subcategory?.trim();
 
-      const matchesCategory = selectedCategory === 'Todos' || itemCat === selectedCategory;
+      // Compatibilidade retroativa para exibir produtos antigos se a categoria selecionada for "Malharia"
+      let matchesCategory = false;
+      if (selectedCategory === 'Todos') {
+        matchesCategory = true;
+      } else if (selectedCategory === 'Malharia') {
+        matchesCategory = (itemCat === 'Malharia' || itemCat?.toLowerCase() === 'camisetas e uniformes');
+      } else {
+        matchesCategory = itemCat === selectedCategory;
+      }
+
       const matchesSubcategory = selectedSubcategory === 'Todas' || itemSub === selectedSubcategory;
 
       return matchesSearch && matchesCategory && matchesSubcategory;
@@ -642,7 +651,6 @@ export default function App() {
                       <button 
                         onClick={() => {
                           setCurrentWorkshopIndex(prev => (prev - 1 + workshopImages.length) % workshopImages.length);
-                          setLastTabInteraction(Date.now());
                         }}
                         className="p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full transition-colors border border-gray-200 dark:border-slate-700"
                         title="Anterior"
@@ -655,7 +663,6 @@ export default function App() {
                       <button 
                         onClick={() => {
                           setCurrentWorkshopIndex(prev => (prev + 1) % workshopImages.length);
-                          setLastTabInteraction(Date.now());
                         }}
                         className="p-1.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full transition-colors border border-gray-200 dark:border-slate-700"
                         title="Próxima"
@@ -765,17 +772,14 @@ export default function App() {
                         const touchEndX = e.changedTouches[0].clientX;
                         if (touchStartX.current - touchEndX > 40) {
                           changeProductionItems();
-                          setLastTabInteraction(Date.now());
                         } else if (touchEndX - touchStartX.current > 40) {
                           changeProductionItems();
-                          setLastTabInteraction(Date.now());
                         }
                       }}
                     >
                       <button
                         onClick={() => {
                           changeProductionItems();
-                          setLastTabInteraction(Date.now());
                         }}
                         className="p-2 md:p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
                         title="Anterior"
@@ -816,7 +820,6 @@ export default function App() {
                       <button
                         onClick={() => {
                           changeProductionItems();
-                          setLastTabInteraction(Date.now());
                         }}
                         className="p-2 md:p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
                         title="Próxima"
