@@ -8,8 +8,8 @@ const CATEGORY_STRUCTURE = {
     'Estação de trabalho Individuais', 
     'Estação de trabalho Coletivas'
   ],
-  'Cadeiras de escritorio': [
-    'Cadeiras de escritorio'
+  'Cadeiras de escritório': [
+    'Cadeiras de escritório'
   ],
   'Linha escolar': [
     'Cadeiras e mesa (conjunto aluno)', 
@@ -184,7 +184,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
   const sub = formData.subcategory;
 
   const needsMDF = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas'].includes(sub);
-  const needsColors = ['Cadeiras de escritorio', 'Cadeiras e mesa (conjunto aluno)'].includes(sub);
+  const needsColors = ['Cadeiras de escritório', 'Cadeiras e mesa (conjunto aluno)'].includes(sub);
   
   // Habilitando dimensões também para as subcategorias de Artesanato
   const needsDimensions = [
