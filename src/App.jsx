@@ -1102,7 +1102,7 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
   const getStatusStyle = (status) => {
     switch (status) {
       case 'aprovado': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
-      case 'bloqueado': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800';
+      case 'bloqueado': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-green-200 dark:border-green-800';
       default: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
     }
   };
@@ -1313,8 +1313,27 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
                 <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-4 h-4 md:w-5 md:h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} style={{ backgroundColor: c.code }} />
               ))}
               {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-3 md:h-4 bg-gray-300 dark:bg-slate-600 mx-0.5 md:mx-1"></div>}
+              
+              {/* ALTERAÇÃO SOLICITADA PARA OS MDHS: Miniaturas Redondas com Tooltip com o nome */}
               {item.mdfs?.map(m => (
-                <button key={m.name} title={m.name} onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} className={`px-1.5 py-0.5 md:px-2 md:py-0.5 text-[8px] md:text-[10px] font-bold uppercase tracking-widest rounded-sm border transition-all ${currentImage === m.image_url ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b]' : 'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-600 hover:bg-gray-200 dark:hover:bg-slate-600'}`}>{m.name}</button>
+                <button 
+                  key={m.name} 
+                  title={m.name} 
+                  onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} 
+                  className={`w-6 h-6 md:w-7 md:h-7 rounded-full overflow-hidden border transition-all hover:scale-110 relative group shrink-0 ${currentImage === m.image_url ? 'ring-2 ring-offset-1 ring-[#c78c2b] border-transparent' : 'border-gray-300 dark:border-slate-600'}`}
+                >
+                  {m.image_url ? (
+                    <img src={m.image_url} alt={m.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-[7px] font-bold text-gray-600 dark:text-gray-300 uppercase">
+                      {m.name.substring(0, 2)}
+                    </div>
+                  )}
+                  {/* Tooltip flutuante com o nome real do MDF ao passar o mouse */}
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-md">
+                    {m.name}
+                  </span>
+                </button>
               ))}
             </div>
           )}
