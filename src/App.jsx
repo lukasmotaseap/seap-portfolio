@@ -505,8 +505,15 @@ export default function App() {
       }));
 
       const processedMdfs = await Promise.all((formDataPayload.mdfs || []).map(async (m) => {
-        if (m.file) { const url = await uploadSingleFile(m.file); return { name: m.name, image_url: url }; }
-        return { name: m.name, image_url: m.image_url };
+        let textureUrl = m.texture_image_url;
+        let furnitureUrl = m.image_url;
+        if (m.textureFile) {
+          textureUrl = await uploadSingleFile(m.textureFile);
+        }
+        if (m.furnitureFile) {
+          furnitureUrl = await uploadSingleFile(m.furnitureFile);
+        }
+        return { name: m.name, texture_image_url: textureUrl, image_url: furnitureUrl };
       }));
 
       const itemData = {
@@ -1314,7 +1321,7 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
               ))}
               {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-3 md:h-4 bg-gray-300 dark:bg-slate-600 mx-0.5 md:mx-1"></div>}
               
-              {/* ALTERAÇÃO SOLICITADA PARA OS MDHS: Miniaturas Redondas com Tooltip com o nome */}
+              {/* Miniaturas Redondas do MDF (Botão exibe a textura e ao clicar muda a imagem para a do móvel) */}
               {item.mdfs?.map(m => (
                 <button 
                   key={m.name} 
@@ -1322,14 +1329,14 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
                   onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} 
                   className={`w-6 h-6 md:w-7 md:h-7 rounded-full overflow-hidden border transition-all hover:scale-110 relative group shrink-0 ${currentImage === m.image_url ? 'ring-2 ring-offset-1 ring-[#c78c2b] border-transparent' : 'border-gray-300 dark:border-slate-600'}`}
                 >
-                  {m.image_url ? (
-                    <img src={m.image_url} alt={m.name} className="w-full h-full object-cover" />
+                  {m.texture_image_url || m.image_url ? (
+                    <img src={m.texture_image_url || m.image_url} alt={m.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-[7px] font-bold text-gray-600 dark:text-gray-300 uppercase">
                       {m.name.substring(0, 2)}
                     </div>
                   )}
-                  {/* Tooltip flutuante com o nome real do MDF ao passar o mouse */}
+                  {/* Tooltip com o nome do MDF */}
                   <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-md">
                     {m.name}
                   </span>

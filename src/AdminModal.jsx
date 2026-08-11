@@ -70,7 +70,8 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
   const [newColorFile, setNewColorFile] = useState(null);
 
   const [newMdfName, setNewMdfName] = useState('');
-  const [newMdfFile, setNewMdfFile] = useState(null);
+  const [newMdfTextureFile, setNewMdfTextureFile] = useState(null);
+  const [newMdfFurnitureFile, setNewMdfFurnitureFile] = useState(null);
 
   useEffect(() => {
     if (itemToEdit) {
@@ -164,10 +165,17 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
     if (!newMdfName.trim()) return;
     setFormData(prev => ({
       ...prev,
-      mdfs: [...prev.mdfs, { name: newMdfName.trim(), file: newMdfFile, image_url: null }]
+      mdfs: [...prev.mdfs, { 
+        name: newMdfName.trim(), 
+        textureFile: newMdfTextureFile, 
+        texture_image_url: null, 
+        furnitureFile: newMdfFurnitureFile, 
+        image_url: null 
+      }]
     }));
     setNewMdfName('');
-    setNewMdfFile(null);
+    setNewMdfTextureFile(null);
+    setNewMdfFurnitureFile(null);
   };
 
   const handleRemoveMdf = (indexToRemove) => {
@@ -352,18 +360,24 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                     <div className="flex gap-2 mb-4 flex-wrap">
                       {formData.mdfs.map((mdf, index) => (
                         <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm font-bold uppercase text-[10px]">
-                          <span>{mdf.name} {mdf.file || mdf.image_url ? '📸' : ''}</span>
+                          <span>{mdf.name} {mdf.textureFile || mdf.texture_image_url || mdf.furnitureFile || mdf.image_url ? '📸' : ''}</span>
                           <button type="button" onClick={() => handleRemoveMdf(index)} className="text-[#d12229] font-bold text-sm ml-1 hover:text-red-800 transition-colors">&times;</button>
                         </div>
                       ))}
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-                      <input type="text" placeholder="Tipo (Ex: Carvalho)" value={newMdfName} onChange={(e) => setNewMdfName(e.target.value)} className="w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
-                      <div className="flex-1 flex flex-col justify-center">
-                        <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Foto da Textura (Opcional)</span>
-                        <input type="file" accept="image/*" onChange={(e) => setNewMdfFile(e.target.files[0])} className="text-xs" />
+                    <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
+                      <input type="text" placeholder="Tipo (Ex: Carvalho)" value={newMdfName} onChange={(e) => setNewMdfName(e.target.value)} className="w-full sm:w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="flex flex-col justify-center">
+                          <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Foto da Textura (Para o Botão Circular)</span>
+                          <input type="file" accept="image/*" onChange={(e) => setNewMdfTextureFile(e.target.files[0])} className="text-xs" />
+                        </div>
+                        <div className="flex flex-col justify-center">
+                          <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Foto do Móvel com este MDF (Para o Card)</span>
+                          <input type="file" accept="image/*" onChange={(e) => setNewMdfFurnitureFile(e.target.files[0])} className="text-xs" />
+                        </div>
                       </div>
-                      <button type="button" onClick={handleAddMdf} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors whitespace-nowrap">Adicionar</button>
+                      <button type="button" onClick={handleAddMdf} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors self-start mt-1">Adicionar MDF</button>
                     </div>
                   </div>
                 )}
