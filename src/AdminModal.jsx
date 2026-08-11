@@ -35,8 +35,11 @@ const CATEGORY_STRUCTURE = {
   'Marchetaria': [
     'Marchetaria'
   ],
-  'Barracas':[
+  'Barracas': [
     'Barracas'
+  ],
+  'Carrinhos de Renda': [
+    'Carrinhos de Renda'
   ]
 };
 
