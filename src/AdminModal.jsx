@@ -47,7 +47,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
   const [formData, setFormData] = useState({
     type: 'product',
     title: '',
-    description: '', // Usado para as Características
+    description: '',
     price: '',
     dimensions: '',
     colors: [],
@@ -195,7 +195,6 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
   const needsMDF = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas'].includes(sub);
   const needsColors = ['Cadeiras de escritório', 'Cadeiras e mesa (conjunto aluno)'].includes(sub);
   
-  // Habilitando dimensões também para as subcategorias de Artesanato
   const needsDimensions = [
     'Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 
     'Estação de trabalho Coletivas', 'Blocos e Meios-fios',
@@ -350,17 +349,26 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Opções de MDF / Madeira</label>
                     <div className="flex gap-2 mb-4 flex-wrap">
-                      {formData.mdfs.map((mdf, index) => (
-                        <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm font-bold uppercase text-[10px]">
-                          <span>{mdf.name} {mdf.file || mdf.image_url ? '📸' : ''}</span>
-                          <button type="button" onClick={() => handleRemoveMdf(index)} className="text-[#d12229] font-bold text-sm ml-1 hover:text-red-800 transition-colors">&times;</button>
-                        </div>
-                      ))}
+                      {formData.mdfs.map((mdf, index) => {
+                        const imgSrc = mdf.file ? URL.createObjectURL(mdf.file) : mdf.image_url;
+                        return (
+                          <div key={index} className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 border border-gray-200 dark:border-slate-600 rounded-full shadow-sm w-max" title={mdf.name}>
+                            {imgSrc ? (
+                              <img src={imgSrc} alt={mdf.name} className="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-slate-500" />
+                            ) : (
+                              <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-[10px] font-bold text-gray-500 dark:text-gray-400 border border-gray-300 dark:border-slate-500">
+                                {mdf.name.substring(0, 2).toUpperCase()}
+                              </div>
+                            )}
+                            <button type="button" onClick={() => handleRemoveMdf(index)} className="text-[#d12229] font-bold text-lg hover:text-red-800 transition-colors px-1.5 pb-0.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 leading-none">&times;</button>
+                          </div>
+                        );
+                      })}
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-                      <input type="text" placeholder="Tipo (Ex: Carvalho)" value={newMdfName} onChange={(e) => setNewMdfName(e.target.value)} className="w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
+                    <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4 items-center">
+                      <input type="text" placeholder="Nome do MDF (Ex: Carvalho)" value={newMdfName} onChange={(e) => setNewMdfName(e.target.value)} className="w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
                       <div className="flex-1 flex flex-col justify-center">
-                        <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem (Opcional)</span>
+                        <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Foto da Textura do MDF</span>
                         <input type="file" accept="image/*" onChange={(e) => setNewMdfFile(e.target.files[0])} className="text-xs" />
                       </div>
                       <button type="button" onClick={handleAddMdf} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors whitespace-nowrap">Adicionar</button>
