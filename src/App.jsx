@@ -1264,7 +1264,7 @@ const ImageZoomModal = ({ src, onClose }) => {
 };
 
 const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
-  <div className={`absolute ${isCard ? 'top-2 right-2' : 'top-0 right-0'} z-10 flex gap-2`}>
+  <div className={`absolute ${isCard ? 'top-2 right-2' : 'top-0 right-0'} z-30 flex gap-2`}>
     <button onClick={onEdit} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition border border-[#192d55] rounded-xl">Editar</button>
     {isCard && <button onClick={onDelete} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition border border-[#192d55] rounded-xl">Excluir</button>}
   </div>
@@ -1333,7 +1333,6 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
 
   return (
     <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
-      {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
       
       <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative cursor-pointer" onClick={() => onImageClick(currentImage)}>
         <img src={currentImage} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
@@ -1346,6 +1345,8 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
           </div>
         )}
       </div>
+
+      {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
       
       <div className="p-4 md:p-6 flex-grow flex flex-col justify-between">
         <div>
