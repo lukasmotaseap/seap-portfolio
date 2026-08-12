@@ -72,10 +72,33 @@ export default function App() {
   const [sections, setSections] = useState(initialSections);
   const [catalog, setCatalog] = useState([]);
 
+  // Estados Globais de MDFs e Cores Cadastradas
+  const [globalMdfs, setGlobalMdfs] = useState([
+    { name: 'Branco', texture_image_url: 'https://placehold.co/100x100/ffffff/000000?text=Branco' },
+    { name: 'Cinza Cristal', texture_image_url: 'https://placehold.co/100x100/e2e8f0/000000?text=Cinza' },
+    { name: 'Carvalho Treviso', texture_image_url: 'https://placehold.co/100x100/d97706/ffffff?text=Carvalho' },
+    { name: 'chiaro vel', texture_image_url: 'https://placehold.co/100x100/fef3c7/000000?text=Chiaro' },
+    { name: 'Louro Freijó', texture_image_url: 'https://placehold.co/100x100/b45309/ffffff?text=Freijo' },
+    { name: 'Nogal Sevilha', texture_image_url: 'https://placehold.co/100x100/78350f/ffffff?text=Nogal' }
+  ]);
+  const [globalColors, setGlobalColors] = useState([
+    { name: 'Azul', code: '#2563eb' },
+    { name: 'Preto', code: '#000000' },
+    { name: 'Cinza', code: '#6b7280' }
+  ]);
+
+  // Estados para modais de Novo MDF e Nova Cor
+  const [isNewMdfModalOpen, setIsNewMdfModalOpen] = useState(false);
+  const [newMdfGlobalName, setNewMdfGlobalName] = useState('');
+  const [newMdfGlobalFile, setNewMdfGlobalFile] = useState(null);
+
+  const [isNewColorModalOpen, setIsNewColorModalOpen] = useState(false);
+  const [newColorGlobalName, setNewColorGlobalName] = useState('');
+  const [newColorGlobalCode, setNewColorGlobalCode] = useState('#000000');
+
   // Estados do Hub de Apresentação
   const [activePresentationTab, setActivePresentationTab] = useState('hero');
 
-  // Estados para imagens das Oficinas (Seção Excelência e Reintegração)
   const workshopImages = useMemo(() => [
     '/oficina1.jpg',
     '/oficina2.jpg',
@@ -85,7 +108,6 @@ export default function App() {
   ], []);
   const [currentWorkshopIndex, setCurrentWorkshopIndex] = useState(0);
 
-  // Estados para a seção "Nossa Produção"
   const [currentProductionItems, setCurrentProductionItems] = useState([]);
   const touchStartX = useRef(0);
 
@@ -93,9 +115,6 @@ export default function App() {
 
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
-
-  const [isBakeryModalOpen, setIsBakeryModalOpen] = useState(false);
-  const [bakeryToEdit, setBakeryToEdit] = useState(null);
 
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [profiles, setProfiles] = useState([]);
@@ -123,21 +142,18 @@ export default function App() {
     setNotify({ isOpen: true, type, title, message });
   };
 
-  // Efeito do Dark Mode
   useEffect(() => {
     if (darkMode) document.documentElement.classList.add('dark');
     else document.documentElement.classList.remove('dark');
   }, [darkMode]);
 
-  // Bloqueio de scroll do body em modais
   useEffect(() => {
-    if (fullscreenImage || notify.isOpen || itemToDelete || showPdfModal || showLimpezaPdfModal) document.body.style.overflow = 'hidden';
+    if (fullscreenImage || notify.isOpen || itemToDelete || showPdfModal || showLimpezaPdfModal || isNewMdfModalOpen || isNewColorModalOpen) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'auto';
     
     return () => { document.body.style.overflow = 'auto'; };
-  }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal]);
+  }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal, isNewMdfModalOpen, isNewColorModalOpen]);
 
-  // Timer do Carrossel de Oficinas (2.5 segundos)
   useEffect(() => {
     if (activePresentationTab !== 'hero') return;
     const timer = setInterval(() => {
@@ -146,7 +162,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [activePresentationTab, workshopImages.length]);
 
-  // Função para obter produtos aleatórios da mesma categoria
   const getRandomProductionItems = (items) => {
     const productsOnly = items.filter(i => i.type === 'product');
     if (productsOnly.length === 0) return [];
@@ -174,7 +189,6 @@ export default function App() {
     }
   };
 
-  // Timer da Seção "Nossa Produção" (5 segundos)
   useEffect(() => {
     if (activePresentationTab !== 'production') return;
 
@@ -189,7 +203,6 @@ export default function App() {
     return () => clearInterval(timer);
   }, [activePresentationTab, catalog]);
 
-  // Manipulador de clique no tab
   const handleTabChange = (id) => {
     setActivePresentationTab(id);
   };
@@ -282,19 +295,17 @@ export default function App() {
       .filter(item => item.type === 'product' && item.category)
       .map(item => item.category.trim());
     
-    // Configura os botões: Oculta antigos "camisetas" e garante o botão "Malharia"
     const catSet = new Set(cats);
     catSet.delete('camisetas e uniformes');
     catSet.delete('Camisetas e uniformes');
     catSet.add('Malharia');
     
-    return ['Todos', ...catSet, 'Padaria', 'Piscicultura', 'Limpeza e Manutenção'];
+    return ['Todos', ...catSet, 'Piscicultura', 'Limpeza e Manutenção'];
   }, [catalog]);
 
   const availableSubcategories = useMemo(() => {
-    if (selectedCategory === 'Todos' || selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura' || selectedCategory === 'Limpeza e Manutenção') return [];
+    if (selectedCategory === 'Todos' || selectedCategory === 'Piscicultura' || selectedCategory === 'Limpeza e Manutenção') return [];
     
-    // Tratativa de compatibilidade de legados: se escolheu Malharia, procura por malharia OU antigos cadastros.
     const subs = catalog
       .filter(item => {
         if (item.type !== 'product' || !item.subcategory) return false;
@@ -344,13 +355,7 @@ export default function App() {
         (item.category && fuzzySearch(searchQuery, item.category)) ||
         (item.subcategory && fuzzySearch(searchQuery, item.subcategory)) ||
         (item.colors || []).some(c => c.name.toLowerCase().includes(searchLower)) ||
-        (item.mdfs || []).some(m => m.name.toLowerCase().includes(searchLower)) ||
-        (item.foods || []).some(f => f.toLowerCase().includes(searchLower)) ||
-        (item.drinks || []).some(d => d.toLowerCase().includes(searchLower));
-
-      if (selectedCategory === 'Padaria') {
-        return item.type === 'bakery' && matchesSearch;
-      }
+        (item.mdfs || []).some(m => m.name.toLowerCase().includes(searchLower));
 
       if (selectedCategory === 'Piscicultura') {
         return item.type === 'piscicultura' && matchesSearch;
@@ -360,12 +365,11 @@ export default function App() {
         return item.type === 'limpeza' && matchesSearch;
       }
 
-      if (item.type === 'bakery' || item.type === 'piscicultura' || item.type === 'limpeza') return false; 
+      if (item.type === 'piscicultura' || item.type === 'limpeza') return false; 
       
       const itemCat = item.category?.trim();
       const itemSub = item.subcategory?.trim();
 
-      // Compatibilidade retroativa para exibir produtos antigos se a categoria selecionada for "Malharia"
       let matchesCategory = false;
       if (selectedCategory === 'Todos') {
         matchesCategory = true;
@@ -485,35 +489,32 @@ export default function App() {
     });
   };
 
+  const uploadSingleFile = async (file) => {
+    const processedFile = await convertToWebP(file, 0.8);
+    const fileName = `${Date.now()}_${Math.random()}.webp`;
+    const { error } = await supabase.storage.from('imagens-ativos').upload(fileName, processedFile, { contentType: 'image/webp' });
+    if (error) throw new Error("Falha no envio da imagem: " + error.message);
+    return supabase.storage.from('imagens-ativos').getPublicUrl(fileName).data.publicUrl;
+  };
+
   const handleSaveItem = async (formDataPayload, imageFile) => {
     setIsLoading(true);
     try {
-      const uploadSingleFile = async (file) => {
-        const processedFile = await convertToWebP(file, 0.8);
-        const fileName = `${Date.now()}_${Math.random()}.webp`;
-        const { error } = await supabase.storage.from('imagens-ativos').upload(fileName, processedFile, { contentType: 'image/webp' });
-        if (error) throw new Error("Falha no envio da imagem: " + error.message);
-        return supabase.storage.from('imagens-ativos').getPublicUrl(fileName).data.publicUrl;
-      };
-
       let imageUrl = formDataPayload.image_url;
       if (imageFile) imageUrl = await uploadSingleFile(imageFile);
 
       const processedColors = await Promise.all((formDataPayload.colors || []).map(async (c) => {
-        if (c.file) { const url = await uploadSingleFile(c.file); return { name: c.name, code: c.code, image_url: url }; }
-        return { name: c.name, code: c.code, image_url: c.image_url };
+        let colorUrl = c.image_url;
+        if (c.file) { colorUrl = await uploadSingleFile(c.file); }
+        return { name: c.name, code: c.code, image_url: colorUrl };
       }));
 
       const processedMdfs = await Promise.all((formDataPayload.mdfs || []).map(async (m) => {
-        let textureUrl = m.texture_image_url;
         let furnitureUrl = m.image_url;
-        if (m.textureFile) {
-          textureUrl = await uploadSingleFile(m.textureFile);
-        }
         if (m.furnitureFile) {
           furnitureUrl = await uploadSingleFile(m.furnitureFile);
         }
-        return { name: m.name, texture_image_url: textureUrl, image_url: furnitureUrl };
+        return { name: m.name, texture_image_url: m.texture_image_url, image_url: furnitureUrl };
       }));
 
       const itemData = {
@@ -521,19 +522,18 @@ export default function App() {
         title: formDataPayload.title,
         description: formDataPayload.description || '',
         price: parseFloat(formDataPayload.price) || 0,
-        price_unit: formDataPayload.price_unit || (formDataPayload.type === 'bakery' ? 'pessoa' : 'unidade'),
+        price_unit: formDataPayload.price_unit || 'unidade',
         image_url: imageUrl,
         category: formDataPayload.category ? formDataPayload.category.trim() : null,
         subcategory: formDataPayload.subcategory ? formDataPayload.subcategory.trim() : null,
         dimensions: formDataPayload.dimensions || null,
         colors: processedColors,
         mdfs: processedMdfs,
-        foods: formDataPayload.foods || [],
-        drinks: formDataPayload.drinks || [],
         specification: formDataPayload.specification || null,
         fnde_standard: formDataPayload.fnde_standard || false,
         size: formDataPayload.size || null,
-        m2_price: formDataPayload.m2_price ? parseFloat(formDataPayload.m2_price) : null
+        m2_price: formDataPayload.m2_price ? parseFloat(formDataPayload.m2_price) : null,
+        available: formDataPayload.available
       };
 
       let error;
@@ -551,14 +551,46 @@ export default function App() {
       loadData(); 
       setIsProductModalOpen(false);
       setProductToEdit(null);
-      setIsBakeryModalOpen(false);
-      setBakeryToEdit(null);
       
     } catch (error) {
       showNotification('error', 'Erro ao Registrar Produto', error.message);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSaveNewMdf = async (e) => {
+    e.preventDefault();
+    if (!newMdfGlobalName.trim() || !newMdfGlobalFile) {
+      showNotification('error', 'Campos Obrigatórios', 'Preencha o nome do MDF e selecione a foto da textura.');
+      return;
+    }
+    try {
+      setIsLoading(true);
+      const textureUrl = await uploadSingleFile(newMdfGlobalFile);
+      setGlobalMdfs(prev => [...prev, { name: newMdfGlobalName.trim(), texture_image_url: textureUrl }]);
+      setIsNewMdfModalOpen(false);
+      setNewMdfGlobalName('');
+      setNewMdfGlobalFile(null);
+      showNotification('success', 'MDF Cadastrado', 'Novo tipo de MDF adicionado com sucesso ao sistema.');
+    } catch (err) {
+      showNotification('error', 'Erro', err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSaveNewColor = (e) => {
+    e.preventDefault();
+    if (!newColorGlobalName.trim() || !newColorGlobalCode) {
+      showNotification('error', 'Campos Obrigatórios', 'Preencha o nome da cor e o código hexadecimal.');
+      return;
+    }
+    setGlobalColors(prev => [...prev, { name: newColorGlobalName.trim(), code: newColorGlobalCode }]);
+    setIsNewColorModalOpen(false);
+    setNewColorGlobalName('');
+    setNewColorGlobalCode('#000000');
+    showNotification('success', 'Cor Cadastrada', 'Nova cor adicionada com sucesso ao sistema.');
   };
 
   return (
@@ -622,7 +654,6 @@ export default function App() {
         {/* HUB INTERATIVO DE APRESENTAÇÃO */}
         <section className="relative px-3 sm:px-6 md:px-10 pt-6 pb-10 md:pt-12 md:pb-20 border-b border-gray-200 dark:border-slate-700 rounded-2xl md:rounded-3xl overflow-hidden">
           
-          {/* Container de Imagem de Fundo Responsivo */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-2xl md:rounded-3xl">
              <img 
                src="/background2.JPG" 
@@ -631,7 +662,6 @@ export default function App() {
              />
           </div>
 
-          {/* Conteúdo do Hub com Respiro Adaptável */}
           <div className="relative z-10 w-full">
             <div className="flex flex-row justify-center items-stretch gap-2 sm:gap-3 md:gap-4 mb-6 md:mb-10 w-full max-w-3xl mx-auto px-2 sm:px-4 pt-2 sm:pt-4">
               {[
@@ -654,7 +684,6 @@ export default function App() {
               ))}
             </div>
 
-            {/* Container com Efeito Vidro Embaçado (Glassmorphism) e Respiro Interno */}
             <div className="min-h-[280px] md:min-h-[420px] flex items-center justify-center transition-all duration-500 bg-white/75 dark:bg-slate-900/75 backdrop-blur-md border border-white/50 dark:border-slate-700/60 shadow-2xl rounded-2xl p-5 sm:p-8 md:p-12 max-w-6xl mx-auto">
               
               {activePresentationTab === 'hero' && (
@@ -705,7 +734,6 @@ export default function App() {
 
               {activePresentationTab === 'about' && (
                 <div className="w-full animate-fade-in px-2 md:px-4">
-                  {/* Visão Mobile com Float e texto contornando a imagem */}
                   <div className="block md:hidden text-justify">
                     <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-[#d12229] mb-4 text-center">
                       Quem somos nós
@@ -720,7 +748,6 @@ export default function App() {
                     </p>
                   </div>
 
-                  {/* Visão Desktop (Padrão) */}
                   <div className="hidden md:flex md:flex-row md:gap-16 items-center w-full">
                     <div className="w-1/2 order-1 text-left">
                       <h3 className="font-serif text-3xl md:text-5xl font-semibold text-[#d12229] mb-8 leading-tight">
@@ -741,7 +768,6 @@ export default function App() {
 
               {activePresentationTab === 'dignity' && (
                 <div className="w-full animate-fade-in px-2 md:px-4">
-                  {/* Visão Mobile com Float e texto contornando */}
                   <div className="block md:hidden text-justify">
                     <h3 className="font-serif text-2xl sm:text-3xl font-semibold text-[#c78c2b] mb-5 text-center">
                       Trabalho com Dignidade
@@ -755,7 +781,6 @@ export default function App() {
                     </p>
                   </div>
 
-                  {/* Visão Desktop (Padrão) */}
                   <div className="hidden md:flex md:flex-row md:gap-16 items-center w-full">
                     <div className="w-1/2 order-1 flex justify-center">
                       <div className="aspect-[1956/1505] overflow-hidden w-full rounded-xl shadow-xl border border-white/30 dark:border-slate-700/50">
@@ -798,9 +823,7 @@ export default function App() {
                       }}
                     >
                       <button
-                        onClick={() => {
-                          changeProductionItems();
-                        }}
+                        onClick={changeProductionItems}
                         className="p-2 md:p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
                         title="Anterior"
                       >
@@ -809,7 +832,6 @@ export default function App() {
                         </svg>
                       </button>
 
-                      {/* Visão Mobile: 1 Card Apenas */}
                       <div className="grid grid-cols-1 gap-4 flex-1 md:hidden">
                         {currentProductionItems.slice(0, 1).map((item) => (
                           <ProductCard
@@ -823,7 +845,6 @@ export default function App() {
                         ))}
                       </div>
 
-                      {/* Visão Desktop: 4 Cards */}
                       <div className="hidden md:grid md:grid-cols-4 gap-4 flex-1">
                         {currentProductionItems.map((item) => (
                           <ProductCard
@@ -838,9 +859,7 @@ export default function App() {
                       </div>
 
                       <button
-                        onClick={() => {
-                          changeProductionItems();
-                        }}
+                        onClick={changeProductionItems}
                         className="p-2 md:p-3 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-[#192d55] hover:text-white dark:hover:bg-white dark:hover:text-[#192d55] text-gray-700 dark:text-gray-200 rounded-full shadow-md transition-all border border-gray-200 dark:border-slate-700 shrink-0 z-10"
                         title="Próxima"
                       >
@@ -860,12 +879,15 @@ export default function App() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-gray-200 dark:border-slate-700 pb-4 gap-4">
             <h3 className="font-serif text-4xl md:text-5xl font-bold text-[#192d55] dark:text-white">Produtos e Serviços</h3>
             {isAdmin && (
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button onClick={() => { setProductToEdit(null); setIsProductModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
                   + Novo Produto
                 </button>
-                <button onClick={() => { setBakeryToEdit(null); setIsBakeryModalOpen(true); }} className="bg-[#2d6a4f] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-[#1b4332] transition shadow-md whitespace-nowrap">
-                  + Novo Combo
+                <button onClick={() => setIsNewMdfModalOpen(true)} className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-blue-900 transition shadow-md whitespace-nowrap">
+                  + Novo MDF
+                </button>
+                <button onClick={() => setIsNewColorModalOpen(true)} className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-blue-900 transition shadow-md whitespace-nowrap">
+                  + Nova Cor
                 </button>
               </div>
             )}
@@ -916,11 +938,9 @@ export default function App() {
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-10 text-gray-500 font-serif italic">Nenhum registro localizado para este filtro.</div>
           ) : (
-            <div className={`grid gap-4 md:gap-12 ${(selectedCategory === 'Padaria' || selectedCategory === 'Piscicultura' || selectedCategory === 'Limpeza e Manutenção') ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
+            <div className={`grid gap-4 md:gap-12 ${(selectedCategory === 'Piscicultura' || selectedCategory === 'Limpeza e Manutenção') ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' : 'grid-cols-2 lg:grid-cols-3'}`}>
               {filteredProducts.map(item => (
-                item.type === 'bakery' ? (
-                  <BakeryCard key={item.id} item={item} isAdmin={isAdmin} onDelete={() => handleDeleteItem(item.id)} onEdit={() => { setBakeryToEdit(item); setIsBakeryModalOpen(true); }} />
-                ) : item.type === 'piscicultura' ? (
+                item.type === 'piscicultura' ? (
                   <PisciculturaCard key={item.id} item={item} onViewDetails={() => setShowPdfModal(true)} />
                 ) : item.type === 'limpeza' ? (
                   <PisciculturaCard key={item.id} item={item} onViewDetails={() => setShowLimpezaPdfModal(true)} />
@@ -988,15 +1008,62 @@ export default function App() {
         </div>
       )}
 
-      <AdminModal isOpen={isProductModalOpen} onClose={() => { setIsProductModalOpen(false); setProductToEdit(null); }} itemToEdit={productToEdit} onSave={handleSaveItem} />
-      <AdminBakeryModal isOpen={isBakeryModalOpen} onClose={() => { setIsBakeryModalOpen(false); setBakeryToEdit(null); }} itemToEdit={bakeryToEdit} onSave={handleSaveItem} />
+      {/* Modal Novo MDF */}
+      {isNewMdfModalOpen && (
+        <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-xl max-w-sm w-full text-gray-900 dark:text-white shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 font-serif text-[#192d55] dark:text-white">Cadastrar Novo MDF</h2>
+            <form onSubmit={handleSaveNewMdf} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Nome do MDF *</label>
+                <input required type="text" value={newMdfGlobalName} onChange={e => setNewMdfGlobalName(e.target.value)} placeholder="Ex: Carvalho Natural" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Foto da Textura *</label>
+                <input required type="file" accept="image/*" onChange={e => setNewMdfGlobalFile(e.target.files[0])} className="text-xs w-full" />
+              </div>
+              <div className="flex gap-4 pt-2">
+                <button type="button" onClick={() => setIsNewMdfModalOpen(false)} className="w-full p-2 text-[#d12229] font-bold text-xs uppercase tracking-widest hover:underline">Cancelar</button>
+                <button type="submit" className="w-full p-2 bg-[#2d6a4f] text-white text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-[#1b4332] transition">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Nova Cor */}
+      {isNewColorModalOpen && (
+        <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-xl max-w-sm w-full text-gray-900 dark:text-white shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 font-serif text-[#192d55] dark:text-white">Cadastrar Nova Cor</h2>
+            <form onSubmit={handleSaveNewColor} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Nome da Cor *</label>
+                <input required type="text" value={newColorGlobalName} onChange={e => setNewColorGlobalName(e.target.value)} placeholder="Ex: Vermelho Escuro" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Hexadecimal da Cor *</label>
+                <div className="flex items-center gap-3">
+                  <input required type="color" value={newColorGlobalCode} onChange={e => setNewColorGlobalCode(e.target.value)} className="w-12 h-10 border border-gray-300 rounded cursor-pointer p-0.5 bg-transparent" />
+                  <input required type="text" value={newColorGlobalCode} onChange={e => setNewColorGlobalCode(e.target.value)} placeholder="#000000" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none font-mono" />
+                </div>
+              </div>
+              <div className="flex gap-4 pt-2">
+                <button type="button" onClick={() => setIsNewColorModalOpen(false)} className="w-full p-2 text-[#d12229] font-bold text-xs uppercase tracking-widest hover:underline">Cancelar</button>
+                <button type="submit" className="w-full p-2 bg-[#2d6a4f] text-white text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-[#1b4332] transition">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <AdminModal isOpen={isProductModalOpen} onClose={() => { setIsProductModalOpen(false); setProductToEdit(null); }} itemToEdit={productToEdit} onSave={handleSaveItem} globalMdfs={globalMdfs} globalColors={globalColors} />
       <AdminUsersModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} profiles={profiles} onUpdateProfile={handleUpdateProfile} />
       {fullscreenImage && <ImageZoomModal src={fullscreenImage} onClose={() => setFullscreenImage(null)} />}
       
       <NotificationModal config={notify} onClose={() => setNotify(prev => ({ ...prev, isOpen: false }))} />
       <ConfirmDeleteModal isOpen={!!itemToDelete} onClose={() => setItemToDelete(null)} onConfirm={confirmDelete} />
       
-      {/* Modals de Pré-visualização de PDF Dinâmicos */}
       <PdfPreviewModal isOpen={showPdfModal} onClose={() => setShowPdfModal(false)} pdfUrl="/Piscicultura_Intensiva.pdf" title="Roteiro Técnico" subtitle="Piscicultura" />
       <PdfPreviewModal isOpen={showLimpezaPdfModal} onClose={() => setShowLimpezaPdfModal(false)} pdfUrl="/limpeza_e_manutencao.pdf" title="Portfólio de Serviços" subtitle="Limpeza e Manutenção" />
     </div>
@@ -1164,49 +1231,6 @@ const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
   );
 };
 
-const AdminBakeryModal = ({ isOpen, onClose, itemToEdit, onSave }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [price, setPrice] = useState('');
-  const [priceUnit, setPriceUnit] = useState('pessoa');
-  const [foods, setFoods] = useState('');
-  const [drinks, setDrinks] = useState('');
-
-  useEffect(() => {
-    if (itemToEdit) {
-      setTitle(itemToEdit.title || ''); setDescription(itemToEdit.description || ''); setPrice(itemToEdit.price || ''); setPriceUnit(itemToEdit.price_unit || 'pessoa'); setFoods((itemToEdit.foods || []).join(', ')); setDrinks((itemToEdit.drinks || []).join(', '));
-    } else {
-      setTitle(''); setDescription(''); setPrice(''); setPriceUnit('pessoa'); setFoods(''); setDrinks('');
-    }
-  }, [itemToEdit, isOpen]);
-
-  if (!isOpen) return null;
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave({ id: itemToEdit?.id, type: 'bakery', title, description, price: parseFloat(price), price_unit: priceUnit, foods: foods.split(',').map(s => s.trim()).filter(Boolean), drinks: drinks.split(',').map(s => s.trim()).filter(Boolean) }, null);
-  };
-
-  return (
-    <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white p-8 rounded-xl max-w-lg w-full text-gray-900">
-        <h2 className="text-xl font-bold mb-4 font-serif">Combo Padaria</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input required type="text" value={title} onChange={e => setTitle(e.target.value)} placeholder="Título" className="w-full border p-2 text-sm" />
-          <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Descrição" className="w-full border p-2 text-sm"></textarea>
-          <input required type="number" step="0.01" value={price} onChange={e => setPrice(e.target.value)} placeholder="Preço" className="w-full border p-2 text-sm" />
-          <textarea required value={foods} onChange={e => setFoods(e.target.value)} placeholder="Comidas (separadas por vírgula)" className="w-full border p-2 text-sm"></textarea>
-          <textarea required value={drinks} onChange={e => setDrinks(e.target.value)} placeholder="Bebidas (separadas por vírgula)" className="w-full border p-2 text-sm"></textarea>
-          <div className="flex gap-4">
-            <button type="button" onClick={onClose} className="w-full p-2 text-[#d12229] font-bold text-sm uppercase tracking-widest hover:underline">Cancelar</button>
-            <button type="submit" className="w-full p-2 bg-[#2d6a4f] text-white text-sm font-bold uppercase tracking-widest rounded-sm hover:bg-[#1b4332] transition">Salvar</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
 const ImageZoomModal = ({ src, onClose }) => {
   const [scale, setScale] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -1276,8 +1300,17 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   }, [item.image_url, item.image, item.mdfs, item.colors]);
 
   const [currentImage, setCurrentImage] = useState(defaultImage);
+  const [mobileTooltipText, setMobileTooltipText] = useState(null);
 
   useEffect(() => { setCurrentImage(defaultImage); }, [defaultImage]);
+
+  const handleMobileClick = (name, imgUrl) => {
+    if (imgUrl) setCurrentImage(imgUrl);
+    setMobileTooltipText(name);
+    setTimeout(() => {
+      setMobileTooltipText(null);
+    }, 2500);
+  };
 
   const hasVariations = (item.colors && item.colors.length > 0) || (item.mdfs && item.mdfs.length > 0);
   
@@ -1296,6 +1329,7 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
   if (item.subcategory === 'Pavimentação') suffix = 'm²';
 
   const [intPrice, decPrice] = formatBRL(item.price).split(',');
+  const isAvailable = item.available !== false;
 
   return (
     <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
@@ -1303,45 +1337,62 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
       
       <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative cursor-pointer" onClick={() => onImageClick(currentImage)}>
         <img src={currentImage} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+        
+        {!isAvailable && (
+          <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
+            <span className="bg-[#d12229] text-white font-serif font-bold text-sm md:text-lg tracking-widest px-6 py-2 uppercase shadow-xl transform -rotate-6 border-2 border-white">
+              INDISPONÍVEL
+            </span>
+          </div>
+        )}
       </div>
       
       <div className="p-4 md:p-6 flex-grow flex flex-col justify-between">
         <div>
           {hasVariations && (
-            <div className="flex gap-1.5 md:gap-2 mb-3 md:mb-4 flex-wrap items-center">
-              {item.image_url || item.image ? (
-                <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300 dark:border-slate-600'}`}>
-                  <img src={defaultImage} alt="Principal" className="w-full h-full object-cover" />
-                </button>
-              ) : null}
-              {item.image_url || item.image ? <div className="w-px h-3 md:h-4 bg-gray-300 dark:bg-slate-600 mx-0.5 md:mx-1"></div> : null}
+            <div className="mb-3">
+              <div className="flex gap-1.5 md:gap-2 flex-wrap items-center">
+                {item.image_url || item.image ? (
+                  <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300 dark:border-slate-600'}`}>
+                    <img src={defaultImage} alt="Principal" className="w-full h-full object-cover" />
+                  </button>
+                ) : null}
 
-              {item.colors?.map(c => (
-                <button key={c.name} title={c.name} onClick={() => c.image_url ? setCurrentImage(c.image_url) : setCurrentImage(defaultImage)} className={`w-4 h-4 md:w-5 md:h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} style={{ backgroundColor: c.code }} />
-              ))}
-              {(item.colors?.length > 0 && item.mdfs?.length > 0) && <div className="w-px h-3 md:h-4 bg-gray-300 dark:bg-slate-600 mx-0.5 md:mx-1"></div>}
-              
-              {/* Miniaturas Redondas do MDF (Botão exibe a textura e ao clicar muda a imagem para a do móvel) */}
-              {item.mdfs?.map(m => (
-                <button 
-                  key={m.name} 
-                  title={m.name} 
-                  onClick={() => m.image_url ? setCurrentImage(m.image_url) : setCurrentImage(defaultImage)} 
-                  className={`w-6 h-6 md:w-7 md:h-7 rounded-full overflow-hidden border transition-all hover:scale-110 relative group shrink-0 ${currentImage === m.image_url ? 'ring-2 ring-offset-1 ring-[#c78c2b] border-transparent' : 'border-gray-300 dark:border-slate-600'}`}
-                >
-                  {m.texture_image_url || m.image_url ? (
-                    <img src={m.texture_image_url || m.image_url} alt={m.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-[7px] font-bold text-gray-600 dark:text-gray-300 uppercase">
-                      {m.name.substring(0, 2)}
-                    </div>
-                  )}
-                  {/* Tooltip com o nome do MDF */}
-                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-md">
-                    {m.name}
-                  </span>
-                </button>
-              ))}
+                {item.colors?.map(c => (
+                  <button 
+                    key={c.name} 
+                    title={c.name} 
+                    onClick={() => handleMobileClick(c.name, c.image_url)} 
+                    className={`w-4 h-4 md:w-5 md:h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} 
+                    style={{ backgroundColor: c.code }} 
+                  />
+                ))}
+
+                {item.mdfs?.map(m => (
+                  <button 
+                    key={m.name} 
+                    title={m.name} 
+                    onClick={() => handleMobileClick(m.name, m.image_url)} 
+                    className={`w-6 h-6 md:w-7 md:h-7 rounded-full overflow-hidden border transition-all hover:scale-110 relative group shrink-0 ${currentImage === m.image_url ? 'ring-2 ring-offset-1 ring-[#c78c2b] border-transparent' : 'border-gray-300 dark:border-slate-600'}`}
+                  >
+                    {m.texture_image_url ? (
+                      <img src={m.texture_image_url} alt={m.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-[7px] font-bold text-gray-600 dark:text-gray-300 uppercase">
+                        {m.name.substring(0, 2)}
+                      </div>
+                    )}
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-md">
+                      {m.name}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              {mobileTooltipText && (
+                <div className="text-[10px] text-[#c78c2b] font-bold uppercase mt-1 tracking-wider animate-pulse">
+                  {mobileTooltipText}
+                </div>
+              )}
             </div>
           )}
           
@@ -1376,45 +1427,6 @@ const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
             <span className="text-xs md:text-sm font-bold mt-1">,{decPrice}</span>
             <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest ml-1.5 md:ml-2 mb-0.5 self-end">/ {suffix}</span>
           </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const BakeryCard = ({ item, isAdmin, onDelete, onEdit }) => {
-  const [intPrice, decPrice] = formatBRL(item.price).split(',');
-
-  return (
-    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500 p-5 md:p-8">
-      {isAdmin && <AdminEditBtn label="Combo" isCard onDelete={onEdit} onEdit={onEdit} />}
-      <div className="text-center mb-6 md:mb-8 border-b border-gray-100 dark:border-slate-700 pb-4 md:pb-6">
-         <span className="text-[#c78c2b] text-[10px] md:text-xs font-bold uppercase tracking-widest block mb-1 md:mb-2">Serviço de Padaria</span>
-         <h4 className="font-serif text-lg md:text-2xl font-bold text-gray-900 dark:text-white leading-tight">{item.title}</h4>
-         {item.description && <p className="text-xs md:text-sm text-gray-500 mt-2 md:mt-3 font-light italic">"{item.description}"</p>}
-      </div>
-      
-      <div className="grid grid-cols-2 gap-3 md:gap-6 flex-grow mb-6 md:mb-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 font-light">
-        <div>
-          <h5 className="font-bold text-[10px] md:text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 md:mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Comestíveis</h5>
-          <ul className="space-y-1.5 md:space-y-2 list-disc list-inside marker:text-[#c78c2b]">
-            {(item.foods || []).map((f, i) => <li key={i}>{f}</li>)}
-          </ul>
-        </div>
-        <div>
-          <h5 className="font-bold text-[10px] md:text-xs uppercase tracking-widest text-[#192d55] dark:text-blue-400 mb-2 md:mb-3 border-b border-gray-100 dark:border-slate-700 pb-1">Bebidas</h5>
-          <ul className="space-y-1.5 md:space-y-2 list-disc list-inside marker:text-[#d12229]">
-            {(item.drinks || []).map((d, i) => <li key={i}>{d}</li>)}
-          </ul>
-        </div>
-      </div>
-      
-      <div className="text-center bg-gray-50 dark:bg-slate-900 py-3 md:py-4 rounded-xl mt-auto border-t border-gray-100 dark:border-slate-700">
-        <div className="flex items-start justify-center text-[#2d6a4f] dark:text-[#4ade80] font-serif">
-          <span className="text-xs font-bold mt-1 mr-1">R$</span>
-          <span className="text-2xl md:text-4xl font-bold leading-none">{intPrice}</span>
-          <span className="text-xs font-bold mt-1">,{decPrice}</span>
-          <span className="text-[10px] text-gray-400 uppercase tracking-widest ml-2 self-end">/ {item.price_unit || 'pessoa'}</span>
         </div>
       </div>
     </div>

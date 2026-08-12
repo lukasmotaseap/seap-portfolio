@@ -43,35 +43,43 @@ const CATEGORY_STRUCTURE = {
   ]
 };
 
-export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
+const DEFAULT_MDFS_PRESETS = [
+  { name: 'Branco', texture_image_url: 'https://placehold.co/100x100/ffffff/000000?text=Branco' },
+  { name: 'Cinza Cristal', texture_image_url: 'https://placehold.co/100x100/e2e8f0/000000?text=Cinza' },
+  { name: 'Carvalho Treviso', texture_image_url: 'https://placehold.co/100x100/d97706/ffffff?text=Carvalho' },
+  { name: 'chiaro vel', texture_image_url: 'https://placehold.co/100x100/fef3c7/000000?text=Chiaro' },
+  { name: 'Louro Freijó', texture_image_url: 'https://placehold.co/100x100/b45309/ffffff?text=Freijo' },
+  { name: 'Nogal Sevilha', texture_image_url: 'https://placehold.co/100x100/78350f/ffffff?text=Nogal' }
+];
+
+export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, globalMdfs = [], globalColors = [] }) {
   const [formData, setFormData] = useState({
     type: 'product',
     title: '',
-    description: '', // Usado para as Características
+    description: '',
     price: '',
     dimensions: '',
     colors: [],
     mdfs: [],
-    foods: '',
-    drinks: '',
     category: '',
     subcategory: '',
     specification: '',
     fnde_standard: false,
     size: '',
-    m2_price: ''
+    m2_price: '',
+    available: true
   });
 
   const [file, setFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null); 
   
-  const [newColorName, setNewColorName] = useState('');
-  const [newColorCode, setNewColorCode] = useState('#000000');
+  const [selectedColorName, setSelectedColorName] = useState('');
   const [newColorFile, setNewColorFile] = useState(null);
 
-  const [newMdfName, setNewMdfName] = useState('');
-  const [newMdfTextureFile, setNewMdfTextureFile] = useState(null);
+  const [selectedMdfName, setSelectedMdfName] = useState('');
   const [newMdfFurnitureFile, setNewMdfFurnitureFile] = useState(null);
+
+  const allMdfsAvailable = [...DEFAULT_MDFS_PRESETS, ...globalMdfs];
 
   useEffect(() => {
     if (itemToEdit) {
@@ -84,15 +92,14 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
         dimensions: itemToEdit.dimensions || '',
         colors: itemToEdit.colors || [],
         mdfs: itemToEdit.mdfs || [],
-        foods: itemToEdit.foods ? itemToEdit.foods.join(', ') : '',
-        drinks: itemToEdit.drinks ? itemToEdit.drinks.join(', ') : '',
         image_url: itemToEdit.image_url || itemToEdit.image || '',
         category: itemToEdit.category || '',
         subcategory: itemToEdit.subcategory || '',
         specification: itemToEdit.specification || '',
         fnde_standard: itemToEdit.fnde_standard || false,
         size: itemToEdit.size || '',
-        m2_price: itemToEdit.m2_price || ''
+        m2_price: itemToEdit.m2_price || '',
+        available: itemToEdit.available !== false
       });
       setFile(null);
       setImagePreview(itemToEdit.image_url || itemToEdit.image || null);
@@ -105,14 +112,13 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
         dimensions: '',
         colors: [],
         mdfs: [],
-        foods: '',
-        drinks: '',
         category: '',
         subcategory: '',
         specification: '',
         fnde_standard: false,
         size: '',
-        m2_price: ''
+        m2_price: '',
+        available: true
       });
       setFile(null);
       setImagePreview(null);
@@ -145,12 +151,13 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
   };
 
   const handleAddColor = () => {
-    if (!newColorName.trim()) return;
+    if (!selectedColorName) return;
+    const foundColor = globalColors.find(c => c.name === selectedColorName) || { name: selectedColorName, code: '#000000' };
     setFormData(prev => ({
       ...prev,
-      colors: [...prev.colors, { name: newColorName.trim(), code: newColorCode, file: newColorFile, image_url: null }]
+      colors: [...prev.colors, { name: foundColor.name, code: foundColor.code, file: newColorFile, image_url: null }]
     }));
-    setNewColorName('');
+    setSelectedColorName('');
     setNewColorFile(null);
   };
 
@@ -161,20 +168,27 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
     }));
   };
 
+  const handleUpdateColorFile = (index, fileObj) => {
+    setFormData(prev => {
+      const updatedColors = [...prev.colors];
+      updatedColors[index] = { ...updatedColors[index], file: fileObj };
+      return { ...prev, colors: updatedColors };
+    });
+  };
+
   const handleAddMdf = () => {
-    if (!newMdfName.trim()) return;
+    if (!selectedMdfName) return;
+    const foundMdf = allMdfsAvailable.find(m => m.name === selectedMdfName);
     setFormData(prev => ({
       ...prev,
       mdfs: [...prev.mdfs, { 
-        name: newMdfName.trim(), 
-        textureFile: newMdfTextureFile, 
-        texture_image_url: null, 
+        name: selectedMdfName, 
+        texture_image_url: foundMdf?.texture_image_url || null,
         furnitureFile: newMdfFurnitureFile, 
         image_url: null 
       }]
     }));
-    setNewMdfName('');
-    setNewMdfTextureFile(null);
+    setSelectedMdfName('');
     setNewMdfFurnitureFile(null);
   };
 
@@ -185,14 +199,20 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
     }));
   };
 
+  const handleUpdateMdfFurnitureFile = (index, fileObj) => {
+    setFormData(prev => {
+      const updatedMdfs = [...prev.mdfs];
+      updatedMdfs[index] = { ...updatedMdfs[index], furnitureFile: fileObj };
+      return { ...prev, mdfs: updatedMdfs };
+    });
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const payload = {
       ...formData,
       price: parseFloat(formData.price) || 0,
       m2_price: formData.m2_price ? parseFloat(formData.m2_price) : null,
-      foods: formData.type === 'bakery' ? formData.foods.split(',').map(f => f.trim()).filter(Boolean) : [],
-      drinks: formData.type === 'bakery' ? formData.drinks.split(',').map(d => d.trim()).filter(Boolean) : []
     };
     onSave(payload, file);
   };
@@ -203,7 +223,6 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
   const needsMDF = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas'].includes(sub);
   const needsColors = ['Cadeiras de escritório', 'Cadeiras e mesa (conjunto aluno)'].includes(sub);
   
-  // Habilitando dimensões também para as subcategorias de Artesanato
   const needsDimensions = [
     'Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 
     'Estação de trabalho Coletivas', 'Blocos e Meios-fios',
@@ -233,10 +252,19 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Classificação</label>
                 <select name="type" value={formData.type} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]">
                   <option value="product" className="dark:text-slate-900">Produto de Oficina / Serviço</option>
-                  <option value="bakery" className="dark:text-slate-900">Combo de Alimentos (Padaria)</option>
                 </select>
               </div>
 
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Disponibilidade</label>
+                <div className="flex items-center gap-2 mt-2">
+                  <input type="checkbox" id="available" name="available" checked={formData.available} onChange={handleChange} className="w-4 h-4 text-[#c78c2b] focus:ring-[#c78c2b] border-gray-300 rounded" />
+                  <label htmlFor="available" className="text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300">Produto Disponível para Fabricação</label>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Fotografia Principal</label>
                 <div className="flex items-center gap-4">
@@ -333,23 +361,35 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                 {needsColors && (
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Variações de Cores</label>
-                    <div className="flex gap-2 mb-4 flex-wrap">
+                    <div className="space-y-3 mb-4">
                       {formData.colors.map((color, index) => (
-                        <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm">
-                          <span className="w-4 h-4 rounded-full border border-gray-300" style={{ backgroundColor: color.code }} />
-                          <span>{color.name} {color.file || color.image_url ? '📸' : ''}</span>
-                          <button type="button" onClick={() => handleRemoveColor(index)} className="text-[#d12229] font-bold ml-1 hover:text-red-800 transition-colors">&times;</button>
+                        <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 h-4 rounded-full border border-gray-300 shrink-0" style={{ backgroundColor: color.code }} />
+                            <span className="font-bold">{color.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <div className="flex flex-col">
+                              <span className="text-[8px] uppercase tracking-widest text-gray-400">Trocar/Adicionar Foto</span>
+                              <input type="file" accept="image/*" onChange={(e) => handleUpdateColorFile(index, e.target.files[0])} className="text-xs" />
+                            </div>
+                            <button type="button" onClick={() => handleRemoveColor(index)} className="text-[#d12229] font-bold text-lg p-1 hover:text-red-800 transition-colors">&times;</button>
+                          </div>
                         </div>
                       ))}
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-                      <input type="text" placeholder="Nome (Ex: Azul)" value={newColorName} onChange={(e) => setNewColorName(e.target.value)} className="w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
-                      <input type="color" value={newColorCode} onChange={(e) => setNewColorCode(e.target.value)} className="w-12 h-[38px] border border-gray-300 dark:border-slate-600 rounded-sm bg-transparent cursor-pointer p-0.5" />
+                      <select value={selectedColorName} onChange={(e) => setSelectedColorName(e.target.value)} className="w-full sm:w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none dark:text-slate-900">
+                        <option value="" disabled>Selecione a Cor...</option>
+                        {globalColors.map(c => (
+                          <option key={c.name} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
                       <div className="flex-1 flex flex-col justify-center">
                         <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem (Opcional)</span>
                         <input type="file" accept="image/*" onChange={(e) => setNewColorFile(e.target.files[0])} className="text-xs" />
                       </div>
-                      <button type="button" onClick={handleAddColor} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors">Adicionar</button>
+                      <button type="button" onClick={handleAddColor} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors self-start sm:self-auto">Adicionar Cor</button>
                     </div>
                   </div>
                 )}
@@ -357,25 +397,32 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit }) {
                 {needsMDF && (
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Opções de MDF / Madeira</label>
-                    <div className="flex gap-2 mb-4 flex-wrap">
+                    <div className="space-y-3 mb-4">
                       {formData.mdfs.map((mdf, index) => (
-                        <div key={index} className="flex items-center gap-2 bg-white dark:bg-slate-800 px-3 py-1.5 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm font-bold uppercase text-[10px]">
-                          <span>{mdf.name} {mdf.textureFile || mdf.texture_image_url || mdf.furnitureFile || mdf.image_url ? '📸' : ''}</span>
-                          <button type="button" onClick={() => handleRemoveMdf(index)} className="text-[#d12229] font-bold text-sm ml-1 hover:text-red-800 transition-colors">&times;</button>
+                        <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm">
+                          <div className="flex items-center gap-2 font-bold uppercase text-xs">
+                            <span>{mdf.name}</span>
+                          </div>
+                          <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <div className="flex flex-col">
+                              <span className="text-[8px] uppercase tracking-widest text-gray-400">Trocar/Adicionar Foto Móvel</span>
+                              <input type="file" accept="image/*" onChange={(e) => handleUpdateMdfFurnitureFile(index, e.target.files[0])} className="text-xs" />
+                            </div>
+                            <button type="button" onClick={() => handleRemoveMdf(index)} className="text-[#d12229] font-bold text-lg p-1 hover:text-red-800 transition-colors">&times;</button>
+                          </div>
                         </div>
                       ))}
                     </div>
                     <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
-                      <input type="text" placeholder="Tipo (Ex: Carvalho)" value={newMdfName} onChange={(e) => setNewMdfName(e.target.value)} className="w-full sm:w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none" />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="flex flex-col justify-center">
-                          <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Foto da Textura (Para o Botão Circular)</span>
-                          <input type="file" accept="image/*" onChange={(e) => setNewMdfTextureFile(e.target.files[0])} className="text-xs" />
-                        </div>
-                        <div className="flex flex-col justify-center">
-                          <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Foto do Móvel com este MDF (Para o Card)</span>
-                          <input type="file" accept="image/*" onChange={(e) => setNewMdfFurnitureFile(e.target.files[0])} className="text-xs" />
-                        </div>
+                      <select value={selectedMdfName} onChange={(e) => setSelectedMdfName(e.target.value)} className="w-full sm:w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none dark:text-slate-900">
+                        <option value="" disabled>Selecione o MDF...</option>
+                        {allMdfsAvailable.map(m => (
+                          <option key={m.name} value={m.name}>{m.name}</option>
+                        ))}
+                      </select>
+                      <div className="flex flex-col justify-center">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Foto do Móvel com este MDF (Para o Card)</span>
+                        <input type="file" accept="image/*" onChange={(e) => setNewMdfFurnitureFile(e.target.files[0])} className="text-xs" />
                       </div>
                       <button type="button" onClick={handleAddMdf} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors self-start mt-1">Adicionar MDF</button>
                     </div>
