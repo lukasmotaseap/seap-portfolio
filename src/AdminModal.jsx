@@ -43,15 +43,6 @@ const CATEGORY_STRUCTURE = {
   ]
 };
 
-const DEFAULT_MDFS_PRESETS = [
-  { name: 'Branco', texture_image_url: 'https://placehold.co/100x100/ffffff/000000?text=Branco' },
-  { name: 'Cinza Cristal', texture_image_url: 'https://placehold.co/100x100/e2e8f0/000000?text=Cinza' },
-  { name: 'Carvalho Treviso', texture_image_url: 'https://placehold.co/100x100/d97706/ffffff?text=Carvalho' },
-  { name: 'chiaro vel', texture_image_url: 'https://placehold.co/100x100/fef3c7/000000?text=Chiaro' },
-  { name: 'Louro Freijó', texture_image_url: 'https://placehold.co/100x100/b45309/ffffff?text=Freijo' },
-  { name: 'Nogal Sevilha', texture_image_url: 'https://placehold.co/100x100/78350f/ffffff?text=Nogal' }
-];
-
 export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, globalMdfs = [], globalColors = [] }) {
   const [formData, setFormData] = useState({
     type: 'product',
@@ -79,7 +70,7 @@ export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, global
   const [selectedMdfName, setSelectedMdfName] = useState('');
   const [newMdfFurnitureFile, setNewMdfFurnitureFile] = useState(null);
 
-  const allMdfsAvailable = [...DEFAULT_MDFS_PRESETS, ...globalMdfs];
+  const allMdfsAvailable = globalMdfs;
 
   useEffect(() => {
     if (itemToEdit) {

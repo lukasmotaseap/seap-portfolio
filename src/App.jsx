@@ -72,15 +72,8 @@ export default function App() {
   const [sections, setSections] = useState(initialSections);
   const [catalog, setCatalog] = useState([]);
 
-  // Estados Globais de MDFs e Cores Cadastradas
-  const [globalMdfs, setGlobalMdfs] = useState([
-    { name: 'Branco', texture_image_url: 'https://placehold.co/100x100/ffffff/000000?text=Branco' },
-    { name: 'Cinza Cristal', texture_image_url: 'https://placehold.co/100x100/e2e8f0/000000?text=Cinza' },
-    { name: 'Carvalho Treviso', texture_image_url: 'https://placehold.co/100x100/d97706/ffffff?text=Carvalho' },
-    { name: 'chiaro vel', texture_image_url: 'https://placehold.co/100x100/fef3c7/000000?text=Chiaro' },
-    { name: 'Louro Freijó', texture_image_url: 'https://placehold.co/100x100/b45309/ffffff?text=Freijo' },
-    { name: 'Nogal Sevilha', texture_image_url: 'https://placehold.co/100x100/78350f/ffffff?text=Nogal' }
-  ]);
+  // Estados Globais de MDFs (Iniciando vazios conforme solicitado) e Cores Cadastradas
+  const [globalMdfs, setGlobalMdfs] = useState([]);
   const [globalColors, setGlobalColors] = useState([
     { name: 'Azul', code: '#2563eb' },
     { name: 'Preto', code: '#000000' },
