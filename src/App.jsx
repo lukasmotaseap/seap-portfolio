@@ -334,7 +334,7 @@ export default function App() {
       type: 'limpeza',
       title: 'Serviços de Limpeza e Manutenção',
       description: 'Conheça nosso portfólio completo de serviços de limpeza e manutenção de ambientes, executados com excelência, cuidado e alto padrão de qualidade.',
-      image: '/limpeza_e_manutenção.jpg',
+      image: '/oficina4.jpg',
       category: 'Limpeza e Manutenção'
     };
 
