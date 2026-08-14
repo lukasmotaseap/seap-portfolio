@@ -3,6 +3,14 @@ import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
 
+useEffect(() => {
+  const link = document.querySelector("link[rel*='icon']") || document.createElement('link');
+  link.type = 'image/png';
+  link.rel = 'icon';
+  link.href = '/seap_logo.png';
+  document.getElementsByTagName('head')[0].appendChild(link);
+}, []);
+
 // Hook Customizado: Permite "Clicar e Arrastar" para rolar
 function useDraggableScroll() {
   const ref = useRef(null);
