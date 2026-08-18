@@ -138,6 +138,10 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState('Todas');
   
+  // Estados para os filtros de ordenação (alfabética e valor)
+  const [sortAlphabetical, setSortAlphabetical] = useState(null); // 'asc' | 'desc' | null
+  const [sortPrice, setSortPrice] = useState(null); // 'asc' | 'desc' | null
+  
   const [itemToDelete, setItemToDelete] = useState(null);
 
   const topRef = useRef(null);
@@ -375,7 +379,7 @@ export default function App() {
 
     const fullCatalog = [...catalog, pisciculturaItem, limpezaItem];
 
-    return fullCatalog.filter(item => {
+    const result = fullCatalog.filter(item => {
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = 
         fuzzySearch(searchQuery, item.title) || 
@@ -411,7 +415,40 @@ export default function App() {
 
       return matchesSearch && matchesCategory && matchesSubcategory;
     });
-  }, [catalog, searchQuery, selectedCategory, selectedSubcategory]);
+
+    // Aplicação da ordenação combinada (alfabética e valor)
+    if (sortAlphabetical || sortPrice) {
+      result.sort((a, b) => {
+        if (sortAlphabetical) {
+          const res = sortAlphabetical === 'asc'
+            ? (a.title || '').localeCompare(b.title || '', 'pt-BR', { sensitivity: 'accent' })
+            : (b.title || '').localeCompare(a.title || '', 'pt-BR', { sensitivity: 'accent' });
+          if (res !== 0) return res;
+        }
+        if (sortPrice) {
+          const priceA = a.price || 0;
+          const priceB = b.price || 0;
+          return sortPrice === 'asc' ? priceA - priceB : priceB - priceA;
+        }
+        return 0;
+      });
+    }
+
+    return result;
+  }, [catalog, searchQuery, selectedCategory, selectedSubcategory, sortAlphabetical, sortPrice]);
+
+  // Handlers para alternar o estado dos botões de ordenação
+  const handleSortAlphabetical = () => {
+    if (sortAlphabetical === null) setSortAlphabetical('asc');
+    else if (sortAlphabetical === 'asc') setSortAlphabetical('desc');
+    else setSortAlphabetical(null);
+  };
+
+  const handleSortPrice = () => {
+    if (sortPrice === null) setSortPrice('asc');
+    else if (sortPrice === 'asc') setSortPrice('desc');
+    else setSortPrice(null);
+  };
 
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
@@ -1108,6 +1145,36 @@ export default function App() {
                   </div>
                 </div>
               )}
+
+              {/* Botões de Filtro de Ordem Alfabética e Valor */}
+              <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-2">Ordenar por:</span>
+                <button
+                  onClick={handleSortAlphabetical}
+                  className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all select-none flex items-center gap-2 ${
+                    sortAlphabetical 
+                      ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' 
+                      : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'
+                  }`}
+                >
+                  Alfabética
+                  {sortAlphabetical === 'asc' && <span>↑</span>}
+                  {sortAlphabetical === 'desc' && <span>↓</span>}
+                </button>
+
+                <button
+                  onClick={handleSortPrice}
+                  className={`text-xs px-4 py-2 rounded-sm uppercase tracking-widest font-bold border transition-all select-none flex items-center gap-2 ${
+                    sortPrice 
+                      ? 'bg-[#c78c2b] text-[#192d55] border-[#c78c2b] shadow-md' 
+                      : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:border-gray-400'
+                  }`}
+                >
+                  Valor
+                  {sortPrice === 'asc' && <span>↑</span>}
+                  {sortPrice === 'desc' && <span>↓</span>}
+                </button>
+              </div>
             </div>
           )}
 
