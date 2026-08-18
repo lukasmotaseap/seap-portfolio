@@ -17,7 +17,7 @@ jobs:
       - name: ⚙️ Configurar Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"
+          node-version: "20"
 
       - name: 📦 Instalar dependencias
         run: npm install
@@ -28,7 +28,11 @@ jobs:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-      - name: 🚀 Sincronizar com Hostinger via lftp
-        run: |
-          sudo apt-get update && sudo apt-get install -y lftp
-          lftp -e "open ftp://${{ secrets.FTP_SERVER }}; user ${{ secrets.FTP_USERNAME }} '${{ secrets.FTP_PASSWORD }}'; mirror -R ./dist/ ./ ; bye"
+      - name: 🚀 Sincronizar com Hostinger
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./dist/ # Mude para ./build/ se o seu projeto for Create React App antigo
+          server-dir: ./
