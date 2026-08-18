@@ -72,7 +72,7 @@ export default function App() {
   const [sections, setSections] = useState(initialSections);
   const [catalog, setCatalog] = useState([]);
 
-  // Estados Globais de MDFs (Iniciando vazios conforme solicitado) e Cores Cadastradas
+  // Estados Globais de MDFs e Cores Cadastradas sincronizados com o Supabase
   const [globalMdfs, setGlobalMdfs] = useState([]);
   const [globalColors, setGlobalColors] = useState([
     { name: 'Azul', code: '#2563eb' },
@@ -239,6 +239,7 @@ export default function App() {
   const loadData = async () => {
     setIsLoading(true);
     try {
+      // 1. Carregar produtos
       const { data, error } = await supabase
         .schema('catalogo')
         .from('produtos')
@@ -249,6 +250,28 @@ export default function App() {
       const loadedCatalog = data || [];
       setCatalog(loadedCatalog);
       setCurrentProductionItems(getRandomProductionItems(loadedCatalog));
+
+      // 2. Carregar MDFs do Supabase
+      const { data: mdfsData, error: mdfsError } = await supabase
+        .schema('catalogo')
+        .from('mdfs')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (!mdfsError && mdfsData) {
+        setGlobalMdfs(mdfsData);
+      }
+
+      // 3. Carregar Cores do Supabase
+      const { data: coresData, error: coresError } = await supabase
+        .schema('catalogo')
+        .from('cores')
+        .select('*')
+        .order('name', { ascending: true });
+
+      if (!coresError && coresData && coresData.length > 0) {
+        setGlobalColors(coresData);
+      }
     } catch (error) {
       console.error("Erro ao carregar dados:", error.message);
       setCatalog([]);
@@ -552,6 +575,7 @@ export default function App() {
     }
   };
 
+  // Persistência de MDF no Supabase
   const handleSaveNewMdf = async (e) => {
     e.preventDefault();
     if (!newMdfGlobalName.trim() || !newMdfGlobalFile) {
@@ -561,29 +585,57 @@ export default function App() {
     try {
       setIsLoading(true);
       const textureUrl = await uploadSingleFile(newMdfGlobalFile);
-      setGlobalMdfs(prev => [...prev, { name: newMdfGlobalName.trim(), texture_image_url: textureUrl }]);
+      const newMdfObj = { name: newMdfGlobalName.trim(), texture_image_url: textureUrl };
+
+      const { data, error } = await supabase
+        .schema('catalogo')
+        .from('mdfs')
+        .insert([newMdfObj])
+        .select();
+
+      if (error) throw error;
+
+      setGlobalMdfs(prev => [...prev, ...(data || [newMdfObj])]);
       setIsNewMdfModalOpen(false);
       setNewMdfGlobalName('');
       setNewMdfGlobalFile(null);
-      showNotification('success', 'MDF Cadastrado', 'Novo tipo de MDF adicionado com sucesso ao sistema.');
+      showNotification('success', 'MDF Cadastrado', 'Novo tipo de MDF adicionado e salvo com sucesso no banco de dados.');
     } catch (err) {
-      showNotification('error', 'Erro', err.message);
+      showNotification('error', 'Erro ao Cadastrar MDF', err.message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSaveNewColor = (e) => {
+  // Persistência de Cor no Supabase
+  const handleSaveNewColor = async (e) => {
     e.preventDefault();
     if (!newColorGlobalName.trim() || !newColorGlobalCode) {
       showNotification('error', 'Campos Obrigatórios', 'Preencha o nome da cor e o código hexadecimal.');
       return;
     }
-    setGlobalColors(prev => [...prev, { name: newColorGlobalName.trim(), code: newColorGlobalCode }]);
-    setIsNewColorModalOpen(false);
-    setNewColorGlobalName('');
-    setNewColorGlobalCode('#000000');
-    showNotification('success', 'Cor Cadastrada', 'Nova cor adicionada com sucesso ao sistema.');
+    try {
+      setIsLoading(true);
+      const newColorObj = { name: newColorGlobalName.trim(), code: newColorGlobalCode };
+
+      const { data, error } = await supabase
+        .schema('catalogo')
+        .from('cores')
+        .insert([newColorObj])
+        .select();
+
+      if (error) throw error;
+
+      setGlobalColors(prev => [...prev, ...(data || [newColorObj])]);
+      setIsNewColorModalOpen(false);
+      setNewColorGlobalName('');
+      setNewColorGlobalCode('#000000');
+      showNotification('success', 'Cor Cadastrada', 'Nova cor adicionada e salva com sucesso no banco de dados.');
+    } catch (err) {
+      showNotification('error', 'Erro ao Cadastrar Cor', err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

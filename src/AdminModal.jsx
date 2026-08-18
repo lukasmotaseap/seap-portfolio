@@ -38,8 +38,8 @@ const CATEGORY_STRUCTURE = {
   'Barracas': [
     'Barracas'
   ],
-  'Carrinhos de Renda': [
-    'Carrinhos de Renda'
+  'Carrinhos': [
+    'Carrinhos'
   ]
 };
 
