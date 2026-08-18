@@ -89,6 +89,21 @@ export default function App() {
   const [newColorGlobalName, setNewColorGlobalName] = useState('');
   const [newColorGlobalCode, setNewColorGlobalCode] = useState('#000000');
 
+  // Estados para Gerenciamento, Edição e Exclusão de MDFs e Cores
+  const [isManageMdfsModalOpen, setIsManageMdfsModalOpen] = useState(false);
+  const [isManageColorsModalOpen, setIsManageColorsModalOpen] = useState(false);
+
+  const [mdfToEdit, setMdfToEdit] = useState(null);
+  const [editMdfName, setEditMdfName] = useState('');
+  const [editMdfFile, setEditMdfFile] = useState(null);
+
+  const [colorToEdit, setColorToEdit] = useState(null);
+  const [editColorName, setEditColorName] = useState('');
+  const [editColorCode, setEditColorCode] = useState('#000000');
+
+  const [mdfToDelete, setMdfToDelete] = useState(null);
+  const [colorToDelete, setColorToDelete] = useState(null);
+
   // Estados do Hub de Apresentação
   const [activePresentationTab, setActivePresentationTab] = useState('hero');
 
@@ -141,11 +156,11 @@ export default function App() {
   }, [darkMode]);
 
   useEffect(() => {
-    if (fullscreenImage || notify.isOpen || itemToDelete || showPdfModal || showLimpezaPdfModal || isNewMdfModalOpen || isNewColorModalOpen) document.body.style.overflow = 'hidden';
+    if (fullscreenImage || notify.isOpen || itemToDelete || showPdfModal || showLimpezaPdfModal || isNewMdfModalOpen || isNewColorModalOpen || isManageMdfsModalOpen || isManageColorsModalOpen || mdfToEdit || colorToEdit || mdfToDelete || colorToDelete) document.body.style.overflow = 'hidden';
     else document.body.style.overflow = 'auto';
     
     return () => { document.body.style.overflow = 'auto'; };
-  }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal, isNewMdfModalOpen, isNewColorModalOpen]);
+  }, [fullscreenImage, notify.isOpen, itemToDelete, showPdfModal, showLimpezaPdfModal, isNewMdfModalOpen, isNewColorModalOpen, isManageMdfsModalOpen, isManageColorsModalOpen, mdfToEdit, colorToEdit, mdfToDelete, colorToDelete]);
 
   useEffect(() => {
     if (activePresentationTab !== 'hero') return;
@@ -239,7 +254,6 @@ export default function App() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // 1. Carregar produtos
       const { data, error } = await supabase
         .schema('catalogo')
         .from('produtos')
@@ -251,7 +265,6 @@ export default function App() {
       setCatalog(loadedCatalog);
       setCurrentProductionItems(getRandomProductionItems(loadedCatalog));
 
-      // 2. Carregar MDFs do Supabase
       const { data: mdfsData, error: mdfsError } = await supabase
         .schema('catalogo')
         .from('mdfs')
@@ -262,7 +275,6 @@ export default function App() {
         setGlobalMdfs(mdfsData);
       }
 
-      // 3. Carregar Cores do Supabase
       const { data: coresData, error: coresError } = await supabase
         .schema('catalogo')
         .from('cores')
@@ -575,7 +587,7 @@ export default function App() {
     }
   };
 
-  // Persistência de MDF no Supabase
+  // Persistência e Administração de MDF no Supabase
   const handleSaveNewMdf = async (e) => {
     e.preventDefault();
     if (!newMdfGlobalName.trim() || !newMdfGlobalFile) {
@@ -607,7 +619,67 @@ export default function App() {
     }
   };
 
-  // Persistência de Cor no Supabase
+  const handleEditMdfClick = (mdf) => {
+    setMdfToEdit(mdf);
+    setEditMdfName(mdf.name);
+    setEditMdfFile(null);
+  };
+
+  const handleSaveEditMdf = async (e) => {
+    e.preventDefault();
+    if (!mdfToEdit) return;
+    try {
+      setIsLoading(true);
+      let textureUrl = mdfToEdit.texture_image_url;
+      if (editMdfFile) {
+        textureUrl = await uploadSingleFile(editMdfFile);
+      }
+      const updatedObj = { name: editMdfName.trim(), texture_image_url: textureUrl };
+      const { error } = await supabase
+        .schema('catalogo')
+        .from('mdfs')
+        .update(updatedObj)
+        .eq('id', mdfToEdit.id);
+
+      if (error) throw error;
+
+      setGlobalMdfs(prev => prev.map(m => m.id === mdfToEdit.id ? { ...m, ...updatedObj } : m));
+      setMdfToEdit(null);
+      setEditMdfFile(null);
+      showNotification('success', 'MDF Atualizado', 'MDF atualizado com sucesso!');
+    } catch (err) {
+      showNotification('error', 'Erro ao Atualizar MDF', err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteMdfClick = (mdf) => {
+    const isLinked = catalog.some(p => (p.mdfs || []).some(m => m.name === mdf.name));
+    if (isLinked) {
+      showNotification('error', 'Ação Bloqueada', 'Não é possível excluir este MDF pois ele está vinculado a um projeto ou orçamento ativo.');
+      return;
+    }
+    setMdfToDelete(mdf);
+  };
+
+  const confirmDeleteMdf = async () => {
+    if (!mdfToDelete) return;
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.schema('catalogo').from('mdfs').delete().eq('id', mdfToDelete.id);
+      if (error) throw error;
+      setGlobalMdfs(prev => prev.filter(m => m.id !== mdfToDelete.id));
+      showNotification('success', 'MDF Excluído', 'MDF excluído com sucesso!');
+    } catch (err) {
+      showNotification('error', 'Erro ao Excluir MDF', err.message);
+    } finally {
+      setIsLoading(false);
+      setMdfToDelete(null);
+    }
+  };
+
+  // Persistência e Administração de Cor no Supabase
   const handleSaveNewColor = async (e) => {
     e.preventDefault();
     if (!newColorGlobalName.trim() || !newColorGlobalCode) {
@@ -635,6 +707,61 @@ export default function App() {
       showNotification('error', 'Erro ao Cadastrar Cor', err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleEditColorClick = (color) => {
+    setColorToEdit(color);
+    setEditColorName(color.name);
+    setEditColorCode(color.code);
+  };
+
+  const handleSaveEditColor = async (e) => {
+    e.preventDefault();
+    if (!colorToEdit) return;
+    try {
+      setIsLoading(true);
+      const updatedObj = { name: editColorName.trim(), code: editColorCode.trim() };
+      const { error } = await supabase
+        .schema('catalogo')
+        .from('cores')
+        .update(updatedObj)
+        .eq('id', colorToEdit.id);
+
+      if (error) throw error;
+
+      setGlobalColors(prev => prev.map(c => c.id === colorToEdit.id ? { ...c, ...updatedObj } : c));
+      setColorToEdit(null);
+      showNotification('success', 'Cor Atualizada', 'Cor atualizada com sucesso!');
+    } catch (err) {
+      showNotification('error', 'Erro ao Atualizar Cor', err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteColorClick = (color) => {
+    const isLinked = catalog.some(p => (p.colors || []).some(c => c.name === color.name));
+    if (isLinked) {
+      showNotification('error', 'Ação Bloqueada', 'Não é possível excluir esta cor pois ela está em uso em algum componente cadastrado.');
+      return;
+    }
+    setColorToDelete(color);
+  };
+
+  const confirmDeleteColor = async () => {
+    if (!colorToDelete) return;
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.schema('catalogo').from('cores').delete().eq('id', colorToDelete.id);
+      if (error) throw error;
+      setGlobalColors(prev => prev.filter(c => c.id !== colorToDelete.id));
+      showNotification('success', 'Cor Excluída', 'Cor excluída com sucesso!');
+    } catch (err) {
+      showNotification('error', 'Erro ao Excluir Cor', err.message);
+    } finally {
+      setIsLoading(false);
+      setColorToDelete(null);
     }
   };
 
@@ -934,6 +1061,12 @@ export default function App() {
                 <button onClick={() => setIsNewColorModalOpen(true)} className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-blue-900 transition shadow-md whitespace-nowrap">
                   + Nova Cor
                 </button>
+                <button onClick={() => setIsManageMdfsModalOpen(true)} className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-blue-900 transition shadow-md whitespace-nowrap">
+                  Gerir MDFs
+                </button>
+                <button onClick={() => setIsManageColorsModalOpen(true)} className="bg-[#192d55] text-white px-4 py-2 text-sm uppercase tracking-widest font-bold rounded-sm hover:bg-blue-900 transition shadow-md whitespace-nowrap">
+                  Gerir Cores
+                </button>
               </div>
             )}
           </div>
@@ -1087,10 +1220,10 @@ export default function App() {
                 <input required type="text" value={newColorGlobalName} onChange={e => setNewColorGlobalName(e.target.value)} placeholder="Ex: Vermelho Escuro" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none" />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Hexadecimal da Cor *</label>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Código / Referência (Hex, RGB ou Catálogo) *</label>
                 <div className="flex items-center gap-3">
-                  <input required type="color" value={newColorGlobalCode} onChange={e => setNewColorGlobalCode(e.target.value)} className="w-12 h-10 border border-gray-300 rounded cursor-pointer p-0.5 bg-transparent" />
-                  <input required type="text" value={newColorGlobalCode} onChange={e => setNewColorGlobalCode(e.target.value)} placeholder="#000000" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none font-mono" />
+                  <input type="color" value={newColorGlobalCode.startsWith('#') ? newColorGlobalCode : '#000000'} onChange={e => setNewColorGlobalCode(e.target.value)} className="w-12 h-10 border border-gray-300 rounded cursor-pointer p-0.5 bg-transparent" />
+                  <input required type="text" value={newColorGlobalCode} onChange={e => setNewColorGlobalCode(e.target.value)} placeholder="#FFFFFF ou TX-900" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none font-mono" />
                 </div>
               </div>
               <div className="flex gap-4 pt-2">
@@ -1098,6 +1231,102 @@ export default function App() {
                 <button type="submit" className="w-full p-2 bg-[#2d6a4f] text-white text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-[#1b4332] transition">Salvar</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modais de Gerenciamento, Edição e Exclusão de MDFs e Cores */}
+      <AdminMdfsModal 
+        isOpen={isManageMdfsModalOpen} 
+        onClose={() => setIsManageMdfsModalOpen(false)} 
+        globalMdfs={globalMdfs} 
+        onEditMdf={handleEditMdfClick} 
+        onDeleteMdf={handleDeleteMdfClick} 
+      />
+
+      <AdminColorsModal 
+        isOpen={isManageColorsModalOpen} 
+        onClose={() => setIsManageColorsModalOpen(false)} 
+        globalColors={globalColors} 
+        onEditColor={handleEditColorClick} 
+        onDeleteColor={handleDeleteColorClick} 
+      />
+
+      {/* Modal de Edição de MDF */}
+      {mdfToEdit && (
+        <div className="fixed inset-0 z-[250] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-xl max-w-sm w-full text-gray-900 dark:text-white shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 font-serif text-[#192d55] dark:text-white">Editar MDF</h2>
+            <form onSubmit={handleSaveEditMdf} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Nome do MDF *</label>
+                <input required type="text" value={editMdfName} onChange={e => setEditMdfName(e.target.value)} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Substituir Foto / Textura</label>
+                <div className="flex items-center gap-3">
+                  {mdfToEdit.texture_image_url && (
+                    <img src={mdfToEdit.texture_image_url} alt="Atual" className="w-10 h-10 object-cover rounded border" />
+                  )}
+                  <input type="file" accept="image/png, image/jpeg, image/webp" onChange={e => setEditMdfFile(e.target.files[0])} className="text-xs w-full" />
+                </div>
+              </div>
+              <div className="flex gap-4 pt-2">
+                <button type="button" onClick={() => setMdfToEdit(null)} className="w-full p-2 text-[#d12229] font-bold text-xs uppercase tracking-widest hover:underline">Cancelar</button>
+                <button type="submit" className="w-full p-2 bg-[#2d6a4f] text-white text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-[#1b4332] transition">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição de Cor */}
+      {colorToEdit && (
+        <div className="fixed inset-0 z-[250] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-xl max-w-sm w-full text-gray-900 dark:text-white shadow-2xl">
+            <h2 className="text-xl font-bold mb-4 font-serif text-[#192d55] dark:text-white">Editar Cor</h2>
+            <form onSubmit={handleSaveEditColor} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Nome da Cor *</label>
+                <input required type="text" value={editColorName} onChange={e => setEditColorName(e.target.value)} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-1">Código / Referência *</label>
+                <input required type="text" value={editColorCode} onChange={e => setEditColorCode(e.target.value)} placeholder="#FFFFFF ou TX-900" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent p-2 text-sm rounded outline-none font-mono" />
+              </div>
+              <div className="flex gap-4 pt-2">
+                <button type="button" onClick={() => setColorToEdit(null)} className="w-full p-2 text-[#d12229] font-bold text-xs uppercase tracking-widest hover:underline">Cancelar</button>
+                <button type="submit" className="w-full p-2 bg-[#2d6a4f] text-white text-xs font-bold uppercase tracking-widest rounded-sm hover:bg-[#1b4332] transition">Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmação Exclusão MDF */}
+      {mdfToDelete && (
+        <div className="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-sm border-2 p-6 shadow-2xl bg-red-50 dark:bg-red-950/20 border-red-600">
+            <h4 className="font-serif text-lg font-bold text-red-800 dark:text-red-400 mb-2">Confirmar Exclusão</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mb-6">Deseja realmente excluir este MDF?</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setMdfToDelete(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#d12229] hover:underline">Cancelar</button>
+              <button onClick={confirmDeleteMdf} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#d12229] hover:bg-red-800 rounded-sm">Excluir</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmação Exclusão Cor */}
+      {colorToDelete && (
+        <div className="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-sm border-2 p-6 shadow-2xl bg-red-50 dark:bg-red-950/20 border-red-600">
+            <h4 className="font-serif text-lg font-bold text-red-800 dark:text-red-400 mb-2">Confirmar Exclusão</h4>
+            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mb-6">Deseja realmente excluir esta cor?</p>
+            <div className="flex justify-end gap-3">
+              <button onClick={() => setColorToDelete(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#d12229] hover:underline">Cancelar</button>
+              <button onClick={confirmDeleteColor} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#d12229] hover:bg-red-800 rounded-sm">Excluir</button>
+            </div>
           </div>
         </div>
       )}
@@ -1114,6 +1343,118 @@ export default function App() {
     </div>
   );
 }
+
+// Componente de Listagem e Gestão de MDFs
+const AdminMdfsModal = ({ isOpen, onClose, globalMdfs, onEditMdf, onDeleteMdf }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-3xl border border-gray-200 dark:border-slate-700 max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex-shrink-0">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-[#192d55] dark:text-white">Gerenciamento de MDFs</h2>
+            <p className="text-xs uppercase tracking-widest text-gray-500 mt-1">Administração de texturas e madeiras</p>
+          </div>
+          <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-[#d12229] transition-colors">&times;</button>
+        </div>
+        <div className="overflow-y-auto flex-grow p-6">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr className="border-b-2 border-gray-200 dark:border-slate-700 text-xs font-bold uppercase tracking-widest text-gray-400">
+                <th className="py-3 px-4">Textura</th>
+                <th className="py-3 px-4">Nome do MDF</th>
+                <th className="py-3 px-4 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
+              {globalMdfs.map((mdf) => (
+                <tr key={mdf.id || mdf.name} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+                  <td className="py-3 px-4">
+                    <div className="w-10 h-10 rounded-sm overflow-hidden border border-gray-300 dark:border-slate-600 bg-gray-100">
+                      {mdf.texture_image_url ? (
+                        <img src={mdf.texture_image_url} alt={mdf.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-gray-400">Sem Foto</div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="py-3 px-4 font-bold text-[#192d55] dark:text-white uppercase text-xs">{mdf.name}</td>
+                  <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                    <button onClick={() => onEditMdf(mdf)} className="bg-gray-800 hover:bg-gray-900 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded shadow transition-all inline-flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                      Editar
+                    </button>
+                    <button onClick={() => onDeleteMdf(mdf)} className="bg-[#d12229] hover:bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded shadow transition-all inline-flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {globalMdfs.length === 0 && (
+                <tr><td colSpan="3" className="py-10 text-center text-gray-500 font-serif italic">Nenhum MDF cadastrado.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Componente de Listagem e Gestão de Cores
+const AdminColorsModal = ({ isOpen, onClose, globalColors, onEditColor, onDeleteColor }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-3xl border border-gray-200 dark:border-slate-700 max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex-shrink-0">
+          <div>
+            <h2 className="font-serif text-2xl font-bold text-[#192d55] dark:text-white">Gerenciamento de Cores</h2>
+            <p className="text-xs uppercase tracking-widest text-gray-500 mt-1">Administração de cores e códigos de referência</p>
+          </div>
+          <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-[#d12229] transition-colors">&times;</button>
+        </div>
+        <div className="overflow-y-auto flex-grow p-6">
+          <table className="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr className="border-b-2 border-gray-200 dark:border-slate-700 text-xs font-bold uppercase tracking-widest text-gray-400">
+                <th className="py-3 px-4">Cor</th>
+                <th className="py-3 px-4">Nome</th>
+                <th className="py-3 px-4">Código / Referência</th>
+                <th className="py-3 px-4 text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
+              {globalColors.map((color) => (
+                <tr key={color.id || color.name} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+                  <td className="py-3 px-4">
+                    <span className="w-8 h-8 rounded-full border border-gray-300 dark:border-slate-600 block shadow-sm" style={{ backgroundColor: color.code }} />
+                  </td>
+                  <td className="py-3 px-4 font-bold text-[#192d55] dark:text-white uppercase text-xs">{color.name}</td>
+                  <td className="py-3 px-4 font-mono text-xs text-gray-600 dark:text-gray-300">{color.code}</td>
+                  <td className="py-3 px-4 text-right space-x-2 whitespace-nowrap">
+                    <button onClick={() => onEditColor(color)} className="bg-gray-800 hover:bg-gray-900 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded shadow transition-all inline-flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                      Editar
+                    </button>
+                    <button onClick={() => onDeleteColor(color)} className="bg-[#d12229] hover:bg-red-700 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1.5 rounded shadow transition-all inline-flex items-center gap-1">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                      Excluir
+                    </button>
+                  </td>
+                </tr>
+              ))}
+              {globalColors.length === 0 && (
+                <tr><td colSpan="4" className="py-10 text-center text-gray-500 font-serif italic">Nenhuma cor cadastrada.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const PdfPreviewModal = ({ isOpen, onClose, pdfUrl = "/Piscicultura_Intensiva.pdf", title = "Roteiro Técnico", subtitle = "Piscicultura" }) => {
   if (!isOpen) return null;
