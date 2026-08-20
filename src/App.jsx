@@ -1,9 +1,448 @@
+import React, { useState, useEffect } from 'react';
+
+const CATEGORY_STRUCTURE = {
+  'Móveis': [
+    'Mesas', 
+    'Armários', 
+    'Aparadores e Estantes', 
+    'Estação de trabalho Individuais', 
+    'Estação de trabalho Coletivas'
+  ],
+  'Cadeiras de escritório': [
+    'Cadeiras de escritório'
+  ],
+  'Linha escolar': [
+    'Cadeiras e mesa (conjunto aluno)', 
+    'Conjuntos de fardamentos de colégio'
+  ],
+  'Malharia': [
+    'Malharia',
+  ],
+  'Blocos e Meios-fios': [
+    'Blocos e Meios-fios'
+  ],
+  'Pavimentação': [
+    'Pavimentação'
+  ],
+  'Artesanato': [
+    'Acessórios',
+    'Ecobag',
+    'Miniaturas',
+    'Itens de São João',
+    'Sacolas',
+    'Outros'
+  ],
+  'Marchetaria': [
+    'Marchetaria'
+  ],
+  'Barracas': [
+    'Barracas'
+  ],
+  'Carrinhos': [
+    'Carrinhos'
+  ]
+};
+
+export default function AdminModal({ isOpen, onClose, onSave, itemToEdit, globalMdfs = [], globalColors = [] }) {
+  const [formData, setFormData] = useState({
+    type: 'product',
+    title: '',
+    description: '',
+    price: '',
+    dimensions: '',
+    colors: [],
+    mdfs: [],
+    category: '',
+    subcategory: '',
+    specification: '',
+    fnde_standard: false,
+    size: '',
+    m2_price: '',
+    available: true
+  });
+
+  const [file, setFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null); 
+  
+  const [selectedColorName, setSelectedColorName] = useState('');
+  const [newColorFile, setNewColorFile] = useState(null);
+
+  const [selectedMdfName, setSelectedMdfName] = useState('');
+  const [newMdfFurnitureFile, setNewMdfFurnitureFile] = useState(null);
+
+  const allMdfsAvailable = globalMdfs;
+
+  useEffect(() => {
+    if (itemToEdit) {
+      setFormData({
+        id: itemToEdit.id || '',
+        type: itemToEdit.type || 'product',
+        title: itemToEdit.title || '',
+        description: itemToEdit.description || '',
+        price: itemToEdit.price || '',
+        dimensions: itemToEdit.dimensions || '',
+        colors: itemToEdit.colors || [],
+        mdfs: itemToEdit.mdfs || [],
+        image_url: itemToEdit.image_url || itemToEdit.image || '',
+        category: itemToEdit.category || '',
+        subcategory: itemToEdit.subcategory || '',
+        specification: itemToEdit.specification || '',
+        fnde_standard: itemToEdit.fnde_standard || false,
+        size: itemToEdit.size || '',
+        m2_price: itemToEdit.m2_price || '',
+        available: itemToEdit.available !== false
+      });
+      setFile(null);
+      setImagePreview(itemToEdit.image_url || itemToEdit.image || null);
+    } else {
+      setFormData({
+        type: 'product',
+        title: '',
+        description: '',
+        price: '',
+        dimensions: '',
+        colors: [],
+        mdfs: [],
+        category: '',
+        subcategory: '',
+        specification: '',
+        fnde_standard: false,
+        size: '',
+        m2_price: '',
+        available: true
+      });
+      setFile(null);
+      setImagePreview(null);
+    }
+  }, [itemToEdit, isOpen]);
+
+  useEffect(() => {
+    return () => {
+      if (file && imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [file, imagePreview]);
+
+  if (!isOpen) return null;
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value,
+      ...(name === 'category' ? { subcategory: '' } : {})
+    }));
+  };
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setImagePreview(URL.createObjectURL(selectedFile));
+    }
+  };
+
+  const handleAddColor = () => {
+    if (!selectedColorName) return;
+    const foundColor = globalColors.find(c => c.name === selectedColorName) || { name: selectedColorName, code: '#000000' };
+    setFormData(prev => ({
+      ...prev,
+      colors: [...prev.colors, { name: foundColor.name, code: foundColor.code, file: newColorFile, image_url: null }]
+    }));
+    setSelectedColorName('');
+    setNewColorFile(null);
+  };
+
+  const handleRemoveColor = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      colors: prev.colors.filter((_, i) => i !== indexToRemove)
+    }));
+  };
+
+  const handleUpdateColorFile = (index, fileObj) => {
+    setFormData(prev => {
+      const updatedColors = [...prev.colors];
+      updatedColors[index] = { ...updatedColors[index], file: fileObj };
+      return { ...prev, colors: updatedColors };
+    });
+  };
+
+  const handleAddMdf = () => {
+    if (!selectedMdfName) return;
+    const foundMdf = allMdfsAvailable.find(m => m.name === selectedMdfName);
+    setFormData(prev => ({
+      ...prev,
+      mdfs: [...prev.mdfs, { 
+        name: selectedMdfName, 
+        texture_image_url: foundMdf?.texture_image_url || null,
+        furnitureFile: newMdfFurnitureFile, 
+        image_url: null 
+      }]
+    }));
+    setSelectedMdfName('');
+    setNewMdfFurnitureFile(null);
+  };
+
+  const handleRemoveMdf = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      mdfs: prev.mdfs.filter((_, i) => i !== indexToRemove)
+    }));
+  };
+
+  const handleUpdateMdfFurnitureFile = (index, fileObj) => {
+    setFormData(prev => {
+      const updatedMdfs = [...prev.mdfs];
+      updatedMdfs[index] = { ...updatedMdfs[index], furnitureFile: fileObj };
+      return { ...prev, mdfs: updatedMdfs };
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const payload = {
+      ...formData,
+      price: parseFloat(formData.price) || 0,
+      m2_price: formData.m2_price ? parseFloat(formData.m2_price) : null,
+    };
+    onSave(payload, file);
+  };
+
+  const isProduct = formData.type === 'product';
+  const sub = formData.subcategory;
+
+  const needsMDF = ['Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 'Estação de trabalho Coletivas'].includes(sub);
+  const needsColors = ['Cadeiras de escritório', 'Cadeiras e mesa (conjunto aluno)'].includes(sub);
+  
+  const needsDimensions = [
+    'Mesas', 'Armários', 'Aparadores e Estantes', 'Estação de trabalho Individuais', 
+    'Estação de trabalho Coletivas', 'Blocos e Meios-fios',
+    'Acessórios', 'Ecobag', 'Miniaturas', 'Itens de São João', 'Sacolas', 'Outros'
+  ].includes(sub);
+  
+  const isConjuntoAluno = sub === 'Cadeiras e mesa (conjunto aluno)';
+  const isBlocos = sub === 'Blocos e Meios-fios';
+  const isPavimentacao = sub === 'Pavimentação';
+
+  return (
+    <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 text-gray-900 overflow-hidden">
+      <div className="bg-white dark:bg-slate-800 dark:text-white rounded-sm shadow-2xl w-full max-w-2xl max-h-[95vh] flex flex-col border border-gray-200 dark:border-slate-700">
+        
+        <div className="flex justify-between items-center p-6 border-b dark:border-slate-700 flex-shrink-0">
+          <h2 className="font-serif text-2xl text-[#192d55] dark:text-white font-bold">
+            {itemToEdit ? 'Alterar Ativo' : 'Inserir Novo Registro'}
+          </h2>
+          <button type="button" onClick={onClose} className="text-[#d12229] hover:text-red-800 transition-colors text-3xl leading-none">&times;</button>
+        </div>
+
+        <div className="overflow-y-auto p-6 flex-grow custom-scrollbar">
+          <form id="admin-form" onSubmit={handleSubmit} className="space-y-8">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Classificação</label>
+                <select name="type" value={formData.type} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]">
+                  <option value="product" className="dark:text-slate-900">Produto de Oficina / Serviço</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Disponibilidade</label>
+                <div className="flex items-center gap-2 mt-2">
+                  <input type="checkbox" id="available" name="available" checked={formData.available} onChange={handleChange} className="w-4 h-4 text-[#c78c2b] focus:ring-[#c78c2b] border-gray-300 rounded" />
+                  <label htmlFor="available" className="text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300">Produto Disponível para Fabricação</label>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Fotografia Principal</label>
+                <div className="flex items-center gap-4">
+                  {imagePreview && (
+                    <div className="w-12 h-12 rounded-sm border border-gray-300 overflow-hidden flex-shrink-0 bg-gray-100">
+                      <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" onChange={handleFileChange} className="w-full text-xs" />
+                </div>
+              </div>
+            </div>
+
+            {isProduct && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b dark:border-slate-700 pb-8">
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Categoria *</label>
+                  <select name="category" value={formData.category} onChange={handleChange} required className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]">
+                    <option value="" disabled className="dark:text-slate-900">Selecione...</option>
+                    {Object.keys(CATEGORY_STRUCTURE).map(cat => (
+                      <option key={cat} value={cat} className="dark:text-slate-900">{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Subcategoria *</label>
+                  <select name="subcategory" value={formData.subcategory} onChange={handleChange} required disabled={!formData.category} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b] disabled:opacity-50">
+                    <option value="" disabled className="dark:text-slate-900">Selecione...</option>
+                    {(CATEGORY_STRUCTURE[formData.category] || []).map(subcat => (
+                      <option key={subcat} value={subcat} className="dark:text-slate-900">{subcat}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-6">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                  {isPavimentacao ? 'Nome do Serviço *' : 'Nome do Produto *'}
+                </label>
+                <input type="text" name="title" value={formData.title} onChange={handleChange} required className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]" />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Características <span className="lowercase font-normal opacity-70">(separadas por vírgula para quebrar linhas no catálogo)</span></label>
+                <textarea name="description" value={formData.description} onChange={handleChange} rows="2" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]"></textarea>
+              </div>
+
+              {isConjuntoAluno && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-blue-50/50 dark:bg-slate-900/30 p-4 rounded border border-blue-100 dark:border-slate-700">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Especificação</label>
+                    <input type="text" name="specification" placeholder="Ex: CJA 04/05 ou 06" value={formData.specification} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-sm p-2 text-sm outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Tamanho</label>
+                    <input type="text" name="size" placeholder="Ex: Único / Juvenil" value={formData.size} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 rounded-sm p-2 text-sm outline-none" />
+                  </div>
+                  <div className="sm:col-span-2 flex items-center gap-2 mt-2">
+                    <input type="checkbox" id="fnde_standard" name="fnde_standard" checked={formData.fnde_standard} onChange={handleChange} className="w-4 h-4 text-[#c78c2b] focus:ring-[#c78c2b] border-gray-300 rounded" />
+                    <label htmlFor="fnde_standard" className="text-xs font-bold uppercase tracking-widest text-gray-700 dark:text-gray-300">Garantir Padrão FNDE</label>
+                  </div>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {isBlocos && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Valor do m² (Opcional)</label>
+                    <input type="number" step="0.01" name="m2_price" value={formData.m2_price} onChange={handleChange} className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]" />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">
+                    {isPavimentacao ? 'Valor por m² (R$) *' : 'Valor Unid. (R$) *'}
+                  </label>
+                  <input type="number" step="0.01" name="price" value={formData.price} onChange={handleChange} required className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]" />
+                </div>
+              </div>
+            </div>
+
+            {isProduct && (needsDimensions || needsColors || needsMDF) && (
+              <div className="bg-gray-50 dark:bg-slate-900/50 p-6 rounded-sm border border-gray-200 dark:border-slate-700 space-y-8">
+                
+                {needsDimensions && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Dimensões (L x A x P)</label>
+                    <input type="text" name="dimensions" value={formData.dimensions} onChange={handleChange} placeholder="Ex: 120 x 75 x 60 cm" className="w-full border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-3 text-sm outline-none focus:border-[#c78c2b]" />
+                  </div>
+                )}
+
+                {needsColors && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Variações de Cores</label>
+                    <div className="space-y-3 mb-4">
+                      {formData.colors.map((color, index) => (
+                        <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="w-4 h-4 rounded-full border border-gray-300 shrink-0" style={{ backgroundColor: color.code }} />
+                            <span className="font-bold">{color.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 w-full sm:w-auto">
+                            <div className="flex flex-col">
+                              <span className="text-[8px] uppercase tracking-widest text-gray-400">Trocar/Adicionar Foto</span>
+                              <input type="file" accept="image/*" onChange={(e) => handleUpdateColorFile(index, e.target.files[0])} className="text-xs" />
+                            </div>
+                            <button type="button" onClick={() => handleRemoveColor(index)} className="text-[#d12229] font-bold text-lg p-1 hover:text-red-800 transition-colors">&times;</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
+                      <select value={selectedColorName} onChange={(e) => setSelectedColorName(e.target.value)} className="w-full sm:w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none dark:text-slate-900">
+                        <option value="" disabled>Selecione a Cor...</option>
+                        {globalColors.map(c => (
+                          <option key={c.name} value={c.name}>{c.name}</option>
+                        ))}
+                      </select>
+                      <div className="flex-1 flex flex-col justify-center">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Imagem (Opcional)</span>
+                        <input type="file" accept="image/*" onChange={(e) => setNewColorFile(e.target.files[0])} className="text-xs" />
+                      </div>
+                      <button type="button" onClick={handleAddColor} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors self-start sm:self-auto">Adicionar Cor</button>
+                    </div>
+                  </div>
+                )}
+
+                {needsMDF && (
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">Opções de MDF / Madeira</label>
+                    <div className="space-y-3 mb-4">
+                      {formData.mdfs.map((mdf, index) => (
+                        <div key={index} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white dark:bg-slate-800 p-3 border border-gray-200 dark:border-slate-600 rounded-sm text-sm shadow-sm">
+                          <div className="flex items-center gap-2 font-bold uppercase text-xs">
+                            <span>{mdf.name}</span>
+                          </div>
+                          <div className="flex items-center gap-3 w-full sm:w-auto">
+                            <div className="flex flex-col">
+                              <span className="text-[8px] uppercase tracking-widest text-gray-400">Trocar/Adicionar Foto Móvel</span>
+                              <input type="file" accept="image/*" onChange={(e) => handleUpdateMdfFurnitureFile(index, e.target.files[0])} className="text-xs" />
+                            </div>
+                            <button type="button" onClick={() => handleRemoveMdf(index)} className="text-[#d12229] font-bold text-lg p-1 hover:text-red-800 transition-colors">&times;</button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-slate-700 pt-4">
+                      <select value={selectedMdfName} onChange={(e) => setSelectedMdfName(e.target.value)} className="w-full sm:w-1/3 border border-gray-300 dark:border-slate-600 bg-transparent rounded-sm p-2 text-sm outline-none dark:text-slate-900">
+                        <option value="" disabled>Selecione o MDF...</option>
+                        {allMdfsAvailable.map(m => (
+                          <option key={m.name} value={m.name}>{m.name}</option>
+                        ))}
+                      </select>
+                      <div className="flex flex-col justify-center">
+                        <span className="text-[9px] uppercase tracking-widest text-gray-400 mb-1">Foto do Móvel com este MDF (Para o Card)</span>
+                        <input type="file" accept="image/*" onChange={(e) => setNewMdfFurnitureFile(e.target.files[0])} className="text-xs" />
+                      </div>
+                      <button type="button" onClick={handleAddMdf} className="bg-[#2d6a4f] text-white text-sm px-4 py-2 rounded-sm uppercase tracking-wider font-bold hover:bg-[#1b4332] transition-colors self-start mt-1">Adicionar MDF</button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          </form>
+        </div>
+
+        <div className="flex gap-4 p-6 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex-shrink-0 justify-end">
+          <button type="button" onClick={onClose} className="px-6 py-3 text-sm uppercase tracking-widest text-[#d12229] font-bold hover:underline transition-colors">Cancelar</button>
+          <button type="submit" form="admin-form" className="px-8 py-3 text-sm uppercase tracking-widest bg-[#2d6a4f] text-white font-bold rounded-sm shadow-md hover:bg-[#1b4332] transition-colors">
+            Validar e Salvar
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { fuzzySearch } from './utils';
 import AdminModal from './AdminModal';
 import { supabase } from './supabaseClient';
 
-// Hook Customizado: Permite "Clicar e Arrastar" para rolar
 function useDraggableScroll() {
   const ref = useRef(null);
   
@@ -57,7 +496,7 @@ const formatBRL = (value) => {
 const initialSections = {
   hero: { title: "Excelência e Reintegração", subtitle: "É com grande satisfação que apresentamos o Portfólio de Produtos e Serviços da Secretaria de Estado de Administração Penitenciária do Maranhão (SEAP). Este material tem como objetivo divulgar as diversas atividades laborais desenvolvidas pelas pessoas privadas de liberdade, realizadas nas oficinas e frentes de trabalho distribuídas em várias localidades do Estado." },
   about: { text: "A Seap é um órgão pertencente ao Poder Executivo do Estado do Maranhão. Tem como finalidade cumprir as decisões judiciais de aplicação da Lei de Execução Penal, a organização, administração, coordenação e a fiscalização das Unidades Prisionais, objetivando principalmente a ressocialização por meio de programas, projetos e ações destinados à capacitação profissional, educação, e reintegração social dos egressos do Sistema Penitenciário Estadual.", img: "/seap_logo.png" },
-  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Mais do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" }
+  dignity: { text: "O Programa “Trabalho com Dignidade”, desenvolvido pela Seap, é uma iniciativa que alia capacitação, ressocialização e cidadania. Focado na implementação de oficinas e frentes de trabalho que utilizam mão de obra carcerária, o projeto amplia oportunidades de trabalho no sistema prisional. Más do que promover a profissionalização, o programa se destaca por oferecer melhores condições para a reintegração social das pessoas privadas de liberdade. Com uma abordagem que valoriza a dignidade humana, a iniciativa constrói um referencial de cidadania, impactando positivamente a recuperação moral, pessoal e profissional das pessoas atendidas. Esse projeto reflete o compromisso com a transformação social e a criação de oportunidades que geram impactos concretos na vida das pessoas e na sociedade.", img: "/Trabalho_com_Dignidade.png" }
 };
 
 export default function App() {
@@ -72,7 +511,6 @@ export default function App() {
   const [sections, setSections] = useState(initialSections);
   const [catalog, setCatalog] = useState([]);
 
-  // Estados Globais de MDFs e Cores Cadastradas sincronizados com o Supabase
   const [globalMdfs, setGlobalMdfs] = useState([]);
   const [globalColors, setGlobalColors] = useState([
     { name: 'Azul', code: '#2563eb' },
@@ -80,7 +518,6 @@ export default function App() {
     { name: 'Cinza', code: '#6b7280' }
   ]);
 
-  // Estados para modais de Novo MDF e Nova Cor
   const [isNewMdfModalOpen, setIsNewMdfModalOpen] = useState(false);
   const [newMdfGlobalName, setNewMdfGlobalName] = useState('');
   const [newMdfGlobalFile, setNewMdfGlobalFile] = useState(null);
@@ -89,7 +526,6 @@ export default function App() {
   const [newColorGlobalName, setNewColorGlobalName] = useState('');
   const [newColorGlobalCode, setNewColorGlobalCode] = useState('#000000');
 
-  // Estados para Gerenciamento, Edição e Exclusão de MDFs e Cores
   const [isManageMdfsModalOpen, setIsManageMdfsModalOpen] = useState(false);
   const [isManageColorsModalOpen, setIsManageColorsModalOpen] = useState(false);
 
@@ -104,7 +540,6 @@ export default function App() {
   const [mdfToDelete, setMdfToDelete] = useState(null);
   const [colorToDelete, setColorToDelete] = useState(null);
 
-  // Estados do Hub de Apresentação
   const [activePresentationTab, setActivePresentationTab] = useState('hero');
 
   const workshopImages = useMemo(() => [
@@ -138,9 +573,8 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [selectedSubcategory, setSelectedSubcategory] = useState('Todas');
   
-  // Estados para os filtros de ordenação (alfabética e valor)
-  const [sortAlphabetical, setSortAlphabetical] = useState(null); // 'asc' | 'desc' | null
-  const [sortPrice, setSortPrice] = useState(null); // 'asc' | 'desc' | null
+  const [sortAlphabetical, setSortAlphabetical] = useState(null);
+  const [sortPrice, setSortPrice] = useState(null);
   
   const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -416,7 +850,6 @@ export default function App() {
       return matchesSearch && matchesCategory && matchesSubcategory;
     });
 
-    // Aplicação da ordenação combinada (alfabética e valor)
     if (sortAlphabetical || sortPrice) {
       result.sort((a, b) => {
         if (sortAlphabetical) {
@@ -437,7 +870,6 @@ export default function App() {
     return result;
   }, [catalog, searchQuery, selectedCategory, selectedSubcategory, sortAlphabetical, sortPrice]);
 
-  // Handlers para alternar o estado dos botões de ordenação
   const handleSortAlphabetical = () => {
     if (sortAlphabetical === null) setSortAlphabetical('asc');
     else if (sortAlphabetical === 'asc') setSortAlphabetical('desc');
@@ -624,7 +1056,6 @@ export default function App() {
     }
   };
 
-  // Persistência e Administração de MDF no Supabase
   const handleSaveNewMdf = async (e) => {
     e.preventDefault();
     if (!newMdfGlobalName.trim() || !newMdfGlobalFile) {
@@ -662,6 +1093,7 @@ export default function App() {
     setEditMdfFile(null);
   };
 
+  // SINCRONIZAÇÃO NA EDIÇÃO DE MDF
   const handleSaveEditMdf = async (e) => {
     e.preventDefault();
     if (!mdfToEdit) return;
@@ -671,7 +1103,10 @@ export default function App() {
       if (editMdfFile) {
         textureUrl = await uploadSingleFile(editMdfFile);
       }
-      const updatedObj = { name: editMdfName.trim(), texture_image_url: textureUrl };
+      const oldName = mdfToEdit.name;
+      const newName = editMdfName.trim();
+      const updatedObj = { name: newName, texture_image_url: textureUrl };
+
       const { error } = await supabase
         .schema('catalogo')
         .from('mdfs')
@@ -680,10 +1115,31 @@ export default function App() {
 
       if (error) throw error;
 
+      // Atualizar automaticamente os produtos vinculados a este MDF
+      const productsToUpdate = catalog.filter(p => (p.mdfs || []).some(m => m.name === oldName));
+      for (const product of productsToUpdate) {
+        const updatedMdfs = product.mdfs.map(m => {
+          if (m.name === oldName) {
+            return {
+              ...m,
+              name: newName,
+              texture_image_url: textureUrl
+            };
+          }
+          return m;
+        });
+        await supabase
+          .schema('catalogo')
+          .from('produtos')
+          .update({ mdfs: updatedMdfs })
+          .eq('id', product.id);
+      }
+
       setGlobalMdfs(prev => prev.map(m => m.id === mdfToEdit.id ? { ...m, ...updatedObj } : m));
       setMdfToEdit(null);
       setEditMdfFile(null);
-      showNotification('success', 'MDF Atualizado', 'MDF atualizado com sucesso!');
+      showNotification('success', 'MDF Atualizado', 'MDF e produtos vinculados atualizados com sucesso!');
+      await loadData();
     } catch (err) {
       showNotification('error', 'Erro ao Atualizar MDF', err.message);
     } finally {
@@ -692,22 +1148,32 @@ export default function App() {
   };
 
   const handleDeleteMdfClick = (mdf) => {
-    const isLinked = catalog.some(p => (p.mdfs || []).some(m => m.name === mdf.name));
-    if (isLinked) {
-      showNotification('error', 'Ação Bloqueada', 'Não é possível excluir este MDF pois ele está vinculado a um projeto ou orçamento ativo.');
-      return;
-    }
     setMdfToDelete(mdf);
   };
 
+  // SINCRONIZAÇÃO NA EXCLUSÃO DE MDF (Remoção de vínculo e limpeza de referências órfãs)
   const confirmDeleteMdf = async () => {
     if (!mdfToDelete) return;
     try {
       setIsLoading(true);
+      const mdfName = mdfToDelete.name;
+
       const { error } = await supabase.schema('catalogo').from('mdfs').delete().eq('id', mdfToDelete.id);
       if (error) throw error;
+
+      const productsToUpdate = catalog.filter(p => (p.mdfs || []).some(m => m.name === mdfName));
+      for (const product of productsToUpdate) {
+        const updatedMdfs = product.mdfs.filter(m => m.name !== mdfName);
+        await supabase
+          .schema('catalogo')
+          .from('produtos')
+          .update({ mdfs: updatedMdfs })
+          .eq('id', product.id);
+      }
+
       setGlobalMdfs(prev => prev.filter(m => m.id !== mdfToDelete.id));
-      showNotification('success', 'MDF Excluído', 'MDF excluído com sucesso!');
+      showNotification('success', 'MDF Excluído', 'MDF excluído e vínculos removidos com sucesso!');
+      await loadData();
     } catch (err) {
       showNotification('error', 'Erro ao Excluir MDF', err.message);
     } finally {
@@ -716,7 +1182,6 @@ export default function App() {
     }
   };
 
-  // Persistência e Administração de Cor no Supabase
   const handleSaveNewColor = async (e) => {
     e.preventDefault();
     if (!newColorGlobalName.trim() || !newColorGlobalCode) {
@@ -753,12 +1218,17 @@ export default function App() {
     setEditColorCode(color.code);
   };
 
+  // SINCRONIZAÇÃO NA EDIÇÃO DE COR
   const handleSaveEditColor = async (e) => {
     e.preventDefault();
     if (!colorToEdit) return;
     try {
       setIsLoading(true);
-      const updatedObj = { name: editColorName.trim(), code: editColorCode.trim() };
+      const oldName = colorToEdit.name;
+      const newName = editColorName.trim();
+      const newCode = editColorCode.trim();
+
+      const updatedObj = { name: newName, code: newCode };
       const { error } = await supabase
         .schema('catalogo')
         .from('cores')
@@ -767,9 +1237,30 @@ export default function App() {
 
       if (error) throw error;
 
+      // Atualizar automaticamente os produtos vinculados a esta cor
+      const productsToUpdate = catalog.filter(p => (p.colors || []).some(c => c.name === oldName));
+      for (const product of productsToUpdate) {
+        const updatedColors = product.colors.map(c => {
+          if (c.name === oldName) {
+            return {
+              ...c,
+              name: newName,
+              code: newCode
+            };
+          }
+          return c;
+        });
+        await supabase
+          .schema('catalogo')
+          .from('produtos')
+          .update({ colors: updatedColors })
+          .eq('id', product.id);
+      }
+
       setGlobalColors(prev => prev.map(c => c.id === colorToEdit.id ? { ...c, ...updatedObj } : c));
       setColorToEdit(null);
-      showNotification('success', 'Cor Atualizada', 'Cor atualizada com sucesso!');
+      showNotification('success', 'Cor Atualizada', 'Cor e produtos vinculados atualizados com sucesso!');
+      await loadData();
     } catch (err) {
       showNotification('error', 'Erro ao Atualizar Cor', err.message);
     } finally {
@@ -778,22 +1269,32 @@ export default function App() {
   };
 
   const handleDeleteColorClick = (color) => {
-    const isLinked = catalog.some(p => (p.colors || []).some(c => c.name === color.name));
-    if (isLinked) {
-      showNotification('error', 'Ação Bloqueada', 'Não é possível excluir esta cor pois ela está em uso em algum componente cadastrado.');
-      return;
-    }
     setColorToDelete(color);
   };
 
+  // SINCRONIZAÇÃO NA EXCLUSÃO DE COR (Remoção de vínculo e limpeza de referências órfãs)
   const confirmDeleteColor = async () => {
     if (!colorToDelete) return;
     try {
       setIsLoading(true);
+      const colorName = colorToDelete.name;
+
       const { error } = await supabase.schema('catalogo').from('cores').delete().eq('id', colorToDelete.id);
       if (error) throw error;
+
+      const productsToUpdate = catalog.filter(p => (p.colors || []).some(c => c.name === colorName));
+      for (const product of productsToUpdate) {
+        const updatedColors = product.colors.filter(c => c.name !== colorName);
+        await supabase
+          .schema('catalogo')
+          .from('produtos')
+          .update({ colors: updatedColors })
+          .eq('id', product.id);
+      }
+
       setGlobalColors(prev => prev.filter(c => c.id !== colorToDelete.id));
-      showNotification('success', 'Cor Excluída', 'Cor excluída com sucesso!');
+      showNotification('success', 'Cor Excluída', 'Cor excluída e vínculos removidos com sucesso!');
+      await loadData();
     } catch (err) {
       showNotification('error', 'Erro ao Excluir Cor', err.message);
     } finally {
@@ -860,7 +1361,6 @@ export default function App() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-12 md:space-y-20">
         
-        {/* HUB INTERATIVO DE APRESENTAÇÃO */}
         <section className="relative px-3 sm:px-6 md:px-10 pt-6 pb-10 md:pt-12 md:pb-20 border-b border-gray-200 dark:border-slate-700 rounded-2xl md:rounded-3xl overflow-hidden">
           
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none rounded-2xl md:rounded-3xl">
@@ -1146,7 +1646,6 @@ export default function App() {
                 </div>
               )}
 
-              {/* Botões de Filtro de Ordem Alfabética e Valor */}
               <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100 dark:border-slate-700">
                 <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mr-2">Ordenar por:</span>
                 <button
@@ -1253,7 +1752,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal Novo MDF */}
       {isNewMdfModalOpen && (
         <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 p-8 rounded-xl max-w-sm w-full text-gray-900 dark:text-white shadow-2xl">
@@ -1276,7 +1774,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal Nova Cor */}
       {isNewColorModalOpen && (
         <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 p-8 rounded-xl max-w-sm w-full text-gray-900 dark:text-white shadow-2xl">
@@ -1302,7 +1799,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modais de Gerenciamento, Edição e Exclusão de MDFs e Cores */}
       <AdminMdfsModal 
         isOpen={isManageMdfsModalOpen} 
         onClose={() => setIsManageMdfsModalOpen(false)} 
@@ -1319,7 +1815,6 @@ export default function App() {
         onDeleteColor={handleDeleteColorClick} 
       />
 
-      {/* Modal de Edição de MDF */}
       {mdfToEdit && (
         <div className="fixed inset-0 z-[250] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 p-8 rounded-xl max-w-sm w-full text-gray-900 dark:text-white shadow-2xl">
@@ -1347,7 +1842,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal de Edição de Cor */}
       {colorToEdit && (
         <div className="fixed inset-0 z-[250] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 p-8 rounded-xl max-w-sm w-full text-gray-900 dark:text-white shadow-2xl">
@@ -1370,12 +1864,11 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal Confirmação Exclusão MDF */}
       {mdfToDelete && (
         <div className="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-sm rounded-sm border-2 p-6 shadow-2xl bg-red-50 dark:bg-red-950/20 border-red-600">
             <h4 className="font-serif text-lg font-bold text-red-800 dark:text-red-400 mb-2">Confirmar Exclusão</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mb-6">Deseja realmente excluir este MDF?</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mb-6">Deseja realmente excluir este MDF? Os produtos vinculados terão o vínculo removido automaticamente.</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setMdfToDelete(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#d12229] hover:underline">Cancelar</button>
               <button onClick={confirmDeleteMdf} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#d12229] hover:bg-red-800 rounded-sm">Excluir</button>
@@ -1384,12 +1877,11 @@ export default function App() {
         </div>
       )}
 
-      {/* Modal Confirmação Exclusão Cor */}
       {colorToDelete && (
         <div className="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-sm rounded-sm border-2 p-6 shadow-2xl bg-red-50 dark:bg-red-950/20 border-red-600">
             <h4 className="font-serif text-lg font-bold text-red-800 dark:text-red-400 mb-2">Confirmar Exclusão</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mb-6">Deseja realmente excluir esta cor?</p>
+            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mb-6">Deseja realmente excluir esta cor? Os produtos vinculados terão o vínculo removido automaticamente.</p>
             <div className="flex justify-end gap-3">
               <button onClick={() => setColorToDelete(null)} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-[#d12229] hover:underline">Cancelar</button>
               <button onClick={confirmDeleteColor} className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#d12229] hover:bg-red-800 rounded-sm">Excluir</button>
@@ -1411,7 +1903,6 @@ export default function App() {
   );
 }
 
-// Componente de Listagem e Gestão de MDFs
 const AdminMdfsModal = ({ isOpen, onClose, globalMdfs, onEditMdf, onDeleteMdf }) => {
   if (!isOpen) return null;
   return (
@@ -1469,7 +1960,6 @@ const AdminMdfsModal = ({ isOpen, onClose, globalMdfs, onEditMdf, onDeleteMdf })
   );
 };
 
-// Componente de Listagem e Gestão de Cores
 const AdminColorsModal = ({ isOpen, onClose, globalColors, onEditColor, onDeleteColor }) => {
   if (!isOpen) return null;
   return (
@@ -1517,370 +2007,6 @@ const AdminColorsModal = ({ isOpen, onClose, globalColors, onEditColor, onDelete
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const PdfPreviewModal = ({ isOpen, onClose, pdfUrl = "/Piscicultura_Intensiva.pdf", title = "Roteiro Técnico", subtitle = "Piscicultura" }) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[300] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-2 md:p-6">
-      <div className="bg-white dark:bg-slate-800 w-full max-w-5xl h-[95vh] md:h-[90vh] flex flex-col rounded-xl overflow-hidden shadow-2xl relative border border-gray-200 dark:border-slate-700">
-        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 shrink-0">
-          <div>
-            <h2 className="font-serif text-base md:text-xl font-bold text-[#192d55] dark:text-white">{title}</h2>
-            <p className="text-[10px] md:text-xs text-gray-500 uppercase tracking-widest">{subtitle}</p>
-          </div>
-          <div className="flex items-center gap-2 md:gap-4">
-            <a href={pdfUrl} download className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] md:text-xs uppercase font-bold tracking-widest px-3 py-2 md:px-4 md:py-2 rounded-sm shadow-md transition-all flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-              <span className="hidden sm:inline">Baixar PDF</span>
-            </a>
-            <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-[#d12229] transition-colors ml-2">&times;</button>
-          </div>
-        </div>
-        <div className="flex-grow w-full bg-gray-100 dark:bg-slate-900 relative">
-          <iframe src={`${pdfUrl}#view=FitH`} title={`Pré-visualização do PDF ${title}`} className="absolute inset-0 w-full h-full border-none" />
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const NotificationModal = ({ config, onClose }) => {
-  if (!config.isOpen) return null;
-  let layoutClasses = 'border-green-600 bg-green-50 dark:bg-green-950/20';
-  let titleColor = 'text-green-800 dark:text-green-400';
-  let buttonStyle = 'bg-green-700 hover:bg-green-800';
-  let icon = (
-    <svg className="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-
-  if (config.type === 'error') {
-    layoutClasses = 'border-red-600 bg-red-50 dark:bg-red-950/20';
-    titleColor = 'text-red-800 dark:text-red-400';
-    buttonStyle = 'bg-red-600 hover:bg-red-700';
-    icon = (
-      <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-      </svg>
-    );
-  } else if (config.type === 'warning') {
-    layoutClasses = 'border-yellow-600 bg-yellow-50 dark:bg-yellow-950/20';
-    titleColor = 'text-yellow-800 dark:text-yellow-400';
-    buttonStyle = 'bg-yellow-600 hover:bg-yellow-700';
-    icon = (
-      <svg className="w-10 h-10 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    );
-  }
-
-  return (
-    <div className="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className={`w-full max-w-sm rounded-sm border-2 p-6 shadow-2xl bg-white dark:bg-slate-800 transition-all transform scale-100 ${layoutClasses}`}>
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 mt-0.5">{icon}</div>
-          <div className="flex-1">
-            <h4 className={`font-serif text-lg font-bold ${titleColor}`}>{config.title}</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mt-1.5 leading-relaxed">{config.message}</p>
-          </div>
-        </div>
-        <div className="mt-6 flex justify-end">
-          <button onClick={onClose} className={`px-5 py-2 text-xs font-bold uppercase tracking-wider text-white rounded-sm transition-colors shadow-sm ${buttonStyle}`}>Entendido</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ConfirmDeleteModal = ({ isOpen, onClose, onConfirm }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-sm rounded-sm border-2 p-6 shadow-2xl bg-red-50 dark:bg-red-950/20 border-red-600 transition-all transform scale-100">
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 mt-0.5">
-            <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-            </svg>
-          </div>
-          <div className="flex-1">
-            <h4 className="font-serif text-lg font-bold text-red-800 dark:text-red-400">Confirmar Exclusão</h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300 font-light mt-1.5 leading-relaxed">Tem certeza que deseja excluir definitivamente este produto/serviço?</p>
-          </div>
-        </div>
-        <div className="mt-6 flex justify-end gap-3">
-          <button onClick={onClose} className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-[#d12229] hover:underline transition-colors shadow-none">Cancelar</button>
-          <button onClick={onConfirm} className="px-5 py-2 text-xs font-bold uppercase tracking-wider text-white bg-[#d12229] hover:bg-red-800 rounded-sm transition-colors shadow-sm">Excluir</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const AdminUsersModal = ({ isOpen, onClose, profiles, onUpdateProfile }) => {
-  if (!isOpen) return null;
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case 'aprovado': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border border-green-200 dark:border-green-800';
-      case 'bloqueado': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-green-200 dark:border-green-800';
-      default: return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800';
-    }
-  };
-
-  const getRoleStyle = (role) => {
-    if (role === 'admin') return 'bg-[#c78c2b]/10 text-[#c78c2b] border border-[#c78c2b]/30';
-    return 'bg-blue-50 text-[#192d55] dark:bg-blue-900/20 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
-  };
-
-  return (
-    <div className="fixed inset-0 z-[200] bg-[#0f172a]/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-5xl border border-gray-200 dark:border-slate-700 max-h-[90vh] flex flex-col overflow-hidden">
-        <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/50 flex-shrink-0">
-          <div>
-            <h2 className="font-serif text-2xl font-bold text-[#192d55] dark:text-white">Controle Institucional</h2>
-            <p className="text-xs uppercase tracking-widest text-gray-500 mt-1">Gerenciamento de Acesso de Servidores</p>
-          </div>
-          <button onClick={onClose} className="text-3xl leading-none text-gray-400 hover:text-[#d12229] transition-colors">&times;</button>
-        </div>
-        <div className="overflow-x-auto flex-grow p-6">
-          <table className="w-full text-left border-collapse text-sm">
-            <thead>
-              <tr className="border-b-2 border-gray-200 dark:border-slate-700 text-xs font-bold uppercase tracking-widest text-gray-400">
-                <th className="py-3 px-4">Servidor</th>
-                <th className="py-3 px-4">E-mail Institucional</th>
-                <th className="py-3 px-4">Nível de Acesso</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700/50">
-              {profiles.map((p) => (
-                <tr key={p.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors group">
-                  <td className="py-4 px-4"><span className="font-bold text-[#192d55] dark:text-white block">{p.nome || 'Nome não informado'}</span></td>
-                  <td className="py-4 px-4 text-gray-600 dark:text-gray-300">{p.email}</td>
-                  <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getRoleStyle(p.cargo)}`}>{p.cargo}</span></td>
-                  <td className="py-4 px-4"><span className={`px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(p.status)}`}>{p.status}</span></td>
-                  <td className="py-4 px-4 text-right space-x-2 whitespace-nowrap">
-                    {p.status !== 'aprovado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'aprovado')} className="bg-[#2d6a4f] hover:bg-[#1b4332] text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm shadow-sm transition-all inline-block">Aprovar</button>}
-                    {p.status !== 'bloqueado' && <button onClick={() => onUpdateProfile(p.id, 'status', 'bloqueado')} className="bg-transparent border border-[#d12229] text-[#d12229] hover:bg-[#d12229] hover:text-white dark:border-red-500 dark:text-red-500 dark:hover:bg-red-600 dark:hover:text-white text-[10px] uppercase font-bold tracking-widest px-4 py-2 rounded-sm transition-all inline-block">Bloquear</button>}
-                  </td>
-                </tr>
-              ))}
-              {profiles.length === 0 && (
-                <tr><td colSpan="5" className="py-10 text-center text-gray-500 font-serif italic">Nenhum servidor cadastrado no sistema.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ImageZoomModal = ({ src, onClose }) => {
-  const [scale, setScale] = useState(1);
-  const [pos, setPos] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
-
-  const handleWheel = (e) => {
-    const delta = e.deltaY * -0.005;
-    const newScale = Math.min(Math.max(1, scale + delta), 4);
-    setScale(newScale);
-    if (newScale === 1) setPos({ x: 0, y: 0 });
-  };
-
-  return (
-    <div className="fixed inset-0 z-[300] bg-black/95 flex items-center justify-center overflow-hidden overscroll-none" onClick={onClose} onWheel={handleWheel}>
-      <button className="absolute top-4 right-4 text-white text-4xl z-10 w-12 h-12 flex items-center justify-center bg-white/10 rounded-full" onClick={onClose}>&times;</button>
-      <img 
-        src={src} 
-        alt="Ampliada" 
-        className="max-w-full max-h-full object-contain cursor-grab active:cursor-grabbing transition-transform duration-75 ease-out"
-        style={{ transform: `translate(${pos.x}px, ${pos.y}px) scale(${scale})` }}
-        onClick={e => e.stopPropagation()}
-        onMouseDown={e => { e.preventDefault(); if (scale > 1) { setIsDragging(true); setStartPos({ x: e.clientX - pos.x, y: e.clientY - pos.y }); } }}
-        onMouseMove={e => { if (isDragging) setPos({ x: e.clientX - startPos.x, y: e.clientY - startPos.y }); }}
-        onMouseUp={() => setIsDragging(false)}
-        onMouseLeave={() => setIsDragging(false)}
-        draggable={false}
-      />
-    </div>
-  );
-};
-
-const AdminEditBtn = ({ label, isCard, onDelete, onEdit }) => (
-  <div className={`absolute ${isCard ? 'top-2 right-2' : 'top-0 right-0'} z-30 flex gap-2`}>
-    <button onClick={onEdit} className="bg-gray-800 text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-gray-900 transition border border-[#192d55] rounded-xl">Editar</button>
-    {isCard && <button onClick={onDelete} className="bg-[#d12229] text-white text-[10px] uppercase font-bold tracking-widest px-3 py-1 shadow-md hover:bg-red-700 transition border border-[#192d55] rounded-xl">Excluir</button>}
-  </div>
-);
-
-const PisciculturaCard = ({ item, onViewDetails }) => {
-  return (
-    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
-      <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative">
-        <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-      </div>
-      <div className="p-4 md:p-6 flex-grow flex flex-col justify-between items-center text-center">
-        <div>
-          <h4 className="font-serif text-base md:text-xl font-bold text-gray-900 dark:text-white mb-2 md:mb-3 leading-tight">{item.title}</h4>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-light mb-4">{item.description}</p>
-        </div>
-        <div className="mt-auto w-full pt-3 md:pt-4 border-t border-gray-100 dark:border-slate-700">
-          <button onClick={onViewDetails} className="w-full bg-[#2d6a4f] hover:bg-[#1b4332] text-white font-bold uppercase tracking-widest text-[10px] md:text-xs px-6 py-2.5 rounded-sm transition-all shadow-md">Ver Mais</button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const ProductCard = ({ item, isAdmin, onDelete, onEdit, onImageClick }) => {
-  const defaultImage = useMemo(() => {
-    if (item.image_url || item.image) return item.image_url || item.image;
-    const firstMdfWithImg = item.mdfs?.find(m => m.image_url)?.image_url;
-    if (firstMdfWithImg) return firstMdfWithImg;
-    const firstColorWithImg = item.colors?.find(c => c.image_url)?.image_url;
-    if (firstColorWithImg) return firstColorWithImg;
-    return 'https://placehold.co/600x450/e2e8f0/475569?text=Sem+Imagem';
-  }, [item.image_url, item.image, item.mdfs, item.colors]);
-
-  const [currentImage, setCurrentImage] = useState(defaultImage);
-  const [mobileTooltipText, setMobileTooltipText] = useState(null);
-
-  useEffect(() => { setCurrentImage(defaultImage); }, [defaultImage]);
-
-  const handleMobileClick = (name, imgUrl) => {
-    if (imgUrl) setCurrentImage(imgUrl);
-    setMobileTooltipText(name);
-    setTimeout(() => {
-      setMobileTooltipText(null);
-    }, 2500);
-  };
-
-  const hasVariations = (item.colors && item.colors.length > 0) || (item.mdfs && item.mdfs.length > 0);
-  
-  const featureList = useMemo(() => {
-    if (!item.description) return [];
-    return item.description.split(',').map(f => f.trim()).filter(Boolean);
-  }, [item.description]);
-
-  const isA_PartirDe = [
-    'Mesas', 'Armários', 'Aparadores e Estantes', 
-    'Estação de trabalho Individuais', 'Estação de trabalho Coletivas', 
-    'Cadeiras de escritorio', 'Cadeiras e mesa (conjunto aluno)'
-  ].includes(item.subcategory);
-
-  let suffix = 'unid.';
-  if (item.subcategory === 'Pavimentação') suffix = 'm²';
-
-  const [intPrice, decPrice] = formatBRL(item.price).split(',');
-  const isAvailable = item.available !== false;
-
-  return (
-    <div className="group flex flex-col relative bg-white dark:bg-slate-800 border border-[#192d55] rounded-xl overflow-hidden hover:shadow-xl transition-shadow duration-500">
-      
-      <div className="product-image-container aspect-[4/3] bg-gray-100 dark:bg-gray-900 overflow-hidden relative cursor-pointer" onClick={() => onImageClick(currentImage)}>
-        <img src={currentImage} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-        
-        {!isAvailable && (
-          <div className="absolute inset-0 bg-red-900/40 backdrop-blur-[2px] flex items-center justify-center z-10 pointer-events-none">
-            <span className="bg-[#d12229] text-white font-serif font-bold text-sm md:text-lg tracking-widest px-6 py-2 uppercase shadow-xl transform -rotate-6 border-2 border-white">
-              INDISPONÍVEL
-            </span>
-          </div>
-        )}
-      </div>
-
-      {isAdmin && <AdminEditBtn label="Produto" isCard onDelete={onDelete} onEdit={onEdit} />}
-      
-      <div className="p-4 md:p-6 flex-grow flex flex-col justify-between">
-        <div>
-          {hasVariations && (
-            <div className="mb-3">
-              <div className="flex gap-1.5 md:gap-2 flex-wrap items-center">
-                {item.image_url || item.image ? (
-                  <button title="Foto Principal" onClick={() => setCurrentImage(defaultImage)} className={`w-5 h-5 md:w-6 md:h-6 rounded-full border shadow-sm transition-all hover:scale-110 overflow-hidden shrink-0 ${currentImage === defaultImage ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300 dark:border-slate-600'}`}>
-                    <img src={defaultImage} alt="Principal" className="w-full h-full object-cover" />
-                  </button>
-                ) : null}
-
-                {item.colors?.map(c => (
-                  <button 
-                    key={c.name} 
-                    title={c.name} 
-                    onClick={() => handleMobileClick(c.name, c.image_url)} 
-                    className={`w-4 h-4 md:w-5 md:h-5 rounded-full border shadow-sm transition-all hover:scale-110 ${currentImage === c.image_url ? 'ring-2 ring-offset-1 ring-black dark:ring-white border-transparent' : 'border-gray-300'}`} 
-                    style={{ backgroundColor: c.code }} 
-                  />
-                ))}
-
-                {item.mdfs?.map(m => (
-                  <button 
-                    key={m.name} 
-                    title={m.name} 
-                    onClick={() => handleMobileClick(m.name, m.image_url)} 
-                    className={`w-6 h-6 md:w-7 md:h-7 rounded-full overflow-hidden border transition-all hover:scale-110 relative group shrink-0 ${currentImage === m.image_url ? 'ring-2 ring-offset-1 ring-[#c78c2b] border-transparent' : 'border-gray-300 dark:border-slate-600'}`}
-                  >
-                    {m.texture_image_url ? (
-                      <img src={m.texture_image_url} alt={m.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-[7px] font-bold text-gray-600 dark:text-gray-300 uppercase">
-                        {m.name.substring(0, 2)}
-                      </div>
-                    )}
-                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-0.5 bg-gray-900 text-white text-[9px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-md">
-                      {m.name}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              {mobileTooltipText && (
-                <div className="text-[10px] text-[#c78c2b] font-bold uppercase mt-1 tracking-wider animate-pulse">
-                  {mobileTooltipText}
-                </div>
-              )}
-            </div>
-          )}
-          
-          <h4 className="font-serif text-base md:text-xl font-bold text-gray-900 dark:text-white mb-2 md:mb-3 leading-tight">{item.title}</h4>
-          
-          {featureList.length > 0 && (
-             <ul className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-light mb-3 md:mb-4 space-y-1 list-disc list-inside marker:text-[#c78c2b]">
-               {featureList.map((f, i) => <li key={i}>{f}</li>)}
-             </ul>
-          )}
-
-          <div className="space-y-1 mb-4 md:mb-6 text-[10px] md:text-xs text-gray-500 uppercase tracking-widest leading-relaxed">
-            {item.specification && <p><span className="font-bold text-gray-700 dark:text-gray-300">Especificação:</span> {item.specification}</p>}
-            {item.fnde_standard && <p className="text-[#2d6a4f] dark:text-[#4ade80] font-bold">Padrão FNDE ✓</p>}
-            {item.dimensions && <p><span className="font-bold text-gray-700 dark:text-gray-300">Dimensões:</span> {item.dimensions}</p>}
-            {item.size && <p><span className="font-bold text-gray-700 dark:text-gray-300">Tamanho:</span> {item.size}</p>}
-          </div>
-        </div>
-        
-        <div className="flex flex-col items-start mt-auto pt-3 md:pt-4 border-t border-gray-100 dark:border-slate-700">
-          {item.m2_price && (
-            <div className="mb-2 w-full flex justify-between items-center text-[10px] md:text-xs text-gray-500 uppercase tracking-widest border-b border-dashed border-gray-200 dark:border-slate-600 pb-2">
-              <span>Valor do m²</span>
-              <span className="font-bold text-gray-700 dark:text-gray-300">R$ {formatBRL(item.m2_price)}</span>
-            </div>
-          )}
-          {isA_PartirDe && <span className="text-[8px] md:text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5 text-left block">A partir de</span>}
-          
-          <div className="flex items-start text-[#2d6a4f] dark:text-[#4ade80] font-serif text-left mt-1">
-            <span className="text-xs md:text-sm font-bold mt-1 mr-1">R$</span>
-            <span className="text-2xl md:text-4xl font-bold leading-none">{intPrice}</span>
-            <span className="text-xs md:text-sm font-bold mt-1">,{decPrice}</span>
-            <span className="text-[8px] md:text-[10px] text-gray-400 uppercase tracking-widest ml-1.5 md:ml-2 mb-0.5 self-end">/ {suffix}</span>
-          </div>
         </div>
       </div>
     </div>
